@@ -37,3 +37,4 @@ Plots with gr backend version:
 - "draw" another possible value is heatmap.
 - PRO : faster
 - CON : limited quality 
+- CON : It crashes pretty often and ends the Julia REPL session completely..
