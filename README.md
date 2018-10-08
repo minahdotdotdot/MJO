@@ -10,20 +10,20 @@ h: time-step
 N: max number of time-steps
 every: we only save every "every" time-steps.. 
 str: every "every" time-steps of all 7 variables are saved in the folder "../movies/field/str.png"
-function f_euler_contour(
+``function f_euler_contour(
     initial_state:: MJO_State, 
     params::MJO_params, 
     h::Float64, 
     N::Int, 
     every::Int,
     str::String
-    )
+    )``
  - This function saves a png every "every" time-steps until N or until there's a NaN or Inf value in any of the 7 variables. 
 
-function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::Int, every::Int)
+``function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::Int, every::Int)``
  - This function outputs an Array{MJO_State,1} where it's ith index contains an MJO_State at the every * i + 1 th time-step. 
  
-function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:contourf)
+``function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:contourf)``
 - This function takes an Array{MJO_State,1} (such as the output from f_euler), then saves all of the variables at all times as png's. 
 
 PyPlot version: 
