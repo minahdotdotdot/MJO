@@ -1,12 +1,15 @@
 # MJO
+
 ## mjo_a.jl
 Sets up 2 structs:
  - MJO_State: fields are the 7 variables getfields(MJO_State) = [:m1, :n1, :m2, :n2, :h1, :h2, :q]
  - MJO_params: fields are all parameters. Put in dimensional values and output non-dimensional values. (Includes discretization parameters.)
 Sets up a bunch of functions (+, -, *, /, maximum, minimum, isnan, isinf) that work on MJO_State and Array{MJO_State,1} variables. 
+
 ## time_step.jl
 ``function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::Int, every::Int)``
  - This function outputs an Array{MJO_State,1} where it's ith index contains an MJO_State at the every * i + 1 th time-step.
+ 
 ## BOTH mjo_sim_pyplot.jl and mjo_sim_plots_gr.jl 
 h: time-step
 N: max number of time-steps
