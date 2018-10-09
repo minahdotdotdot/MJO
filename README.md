@@ -33,7 +33,7 @@ PyPlot version:
 - CON: slower.
 
 Plots with gr backend version:
-- "draw" is a keyword argument that is by default contour (unfilled, but easily can change to filled)
+- "draw" is a keyword argument that is by default contour (unfilled, becase filled option looks exactly like heatmap)
 - "draw" another possible value is heatmap.
 - PRO : faster
 - CON : limited quality 
