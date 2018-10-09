@@ -31,6 +31,7 @@ PyPlot version:
 - "draw": imshow will not work, and contour will not work when the 2d array is a constant. 
 - PRO: better quality images
 - CON: slower.
+- CON: can't do much else on the computer while this is running because the figure window keeps popping out!
 
 Plots with gr backend version:
 - "draw" is a keyword argument that is by default contour (unfilled, becase filled option looks exactly like heatmap)
