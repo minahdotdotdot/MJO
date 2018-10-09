@@ -7,11 +7,11 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:co
     for f in fieldnames(MJO_State)
         evolfield = 1
         if f == :m1 || f ==:n1
-            evolfield = elemdiv(getproperty(evol, f)[1:end-1,2:end-1], getproperty(evol, :h1)[1:end-1,2:end-1])
+            evolfield = elemdiv(getproperty(evol, f)[2:end-1, :], getproperty(evol, :h1)[2:end-1, :])
         elseif f == :m2 || f ==:n2
-            evolfield = elemdiv(getproperty(evol, f)[1:end-1,2:end-1], getproperty(evol, :h2)[1:end-1,2:end-1])
+            evolfield = elemdiv(getproperty(evol, f)[2:end-1, :], getproperty(evol, :h2)[2:end-1, :])
         else
-            evolfield = getproperty(evol, f)[1:end-1,2:end-1]
+            evolfield = getproperty(evol, f)[2:end-1, :]
         end
         minval = minimum(evolfield);
         maxval = maximum(evolfield);
@@ -21,8 +21,8 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:co
             ax[:set_aspect]("equal");
             fig[:colorbar](
                 ax[draw](
-                    params.lon[2:end-1], 
-                    params.lat[1:end-1],  
+                    params.lon, 
+                    params.lat[2:end-1],  
                     evolfield[j],
                     vmin=minval,
                     vmax=maxval,
@@ -43,19 +43,19 @@ end
     for f in fieldnames(MJO_State)
         evolfield = 1
         if f == :m1 || f ==:n1
-            evolfield = getproperty(state,f)[1:end-1, 2:end-1]./getproperty(state,:h1)[1:end-1, 2:end-1];
+            evolfield = getproperty(state,f)[2:end-1, :]./getproperty(state,:h1)[2:end-1, :];
         elseif f ==:m2 || f ==:n2
-            evolfield = getproperty(state,f)[1:end-1, 2:end-1]./getproperty(state,:h2)[1:end-1, 2:end-1];
+            evolfield = getproperty(state,f)[2:end-1, :]./getproperty(state,:h2)[2:end-1, :];
         else
-            evolfield = getproperty(state,f)[1:end-1, 2:end-1];
+            evolfield = getproperty(state,f)[2:end-1, :];
         end
         fig, ax = subplots(); 
         fig[:set_size_inches](13,2); 
         ax[:set_aspect]("equal");
         fig[:colorbar](
             ax[draw](
-                params.lon[2:end-1], 
-                params.lat[1:end-1],  
+                params.lon, 
+                params.lat[2:end-1],  
                 evolfield,
                 cmap="inferno"#"PuOr"
             )

@@ -8,18 +8,18 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; fill_bool::Bool=
     for f in fieldnames(MJO_State)
         evolfield = 1
         if f == :m1 || f ==:n1
-            evolfield = elemdiv(getproperty(evol, f), getproperty(evol, :h1))
+            evolfield = elemdiv(getproperty(evol, f)[2:end-1, :], getproperty(evol, :h1)[2:end-1, :])
         elseif f == :m2 || f ==:n2
-            evolfield = elemdiv(getproperty(evol, f), getproperty(evol, :h2))
+            evolfield = elemdiv(getproperty(evol, f)[2:end-1, :], getproperty(evol, :h2)[2:end-1, :])
         else
-            evolfield = getproperty(evol, f)
+            evolfield = getproperty(evol, f)[2:end-1, :]
         end
         minval = minimum(evolfield);
         maxval = maximum(evolfield);
         for j = 1 : length(evolfield)
             savefig(
                 contour(
-                    evolfield[j][1:end-1, 2:end-1],
+                    evolfield[j],
                     aspect_ratio=1,
                     clims=(minval, maxval),
                     fill=fill_bool
@@ -34,11 +34,11 @@ end
     for f in fieldnames(MJO_State)
         evolfield = 1
         if f == :m1 || f ==:n1
-            evolfield = getproperty(state,f)[1:end-1, 2:end-1]./getproperty(state,:h1)[1:end-1, 2:end-1];
-        elseif f ==:m2 || f ==:n2
-            evolfield = getproperty(state,f)[1:end-1, 2:end-1]./getproperty(state,:h2)[1:end-1, 2:end-1];
+            evolfield = elemdiv(getproperty(evol, f)[2:end-1, :], getproperty(evol, :h1)[2:end-1, :])
+        elseif f == :m2 || f ==:n2
+            evolfield = elemdiv(getproperty(evol, f)[2:end-1, :], getproperty(evol, :h2)[2:end-1, :])
         else
-            evolfield = getproperty(state,f)[1:end-1, 2:end-1];
+            evolfield = getproperty(evol, f)[2:end-1, :]
         end
         GR.figure(size=(9,1))
         savefig(
@@ -104,97 +104,3 @@ function genInitSr(M::Int, str::String; draw::Function=contour)
     end
     return ICqs
 end
-#=
-
-# This is unit test E. 
-x = range(0, stop=params.lon[end]*pi/180, length=grid_x);
-y = range(0, stop = 2*pi, length = grid_y);
-ISE = MJO_State(
-          zeros(grid_y, grid_x),                    # m1
-          zeros(grid_y, grid_x),                    # n1
-          zeros(grid_y, grid_x),                    # m2
-          zeros(grid_y, grid_x),                    # n2
-          2 .+repeat(sin.(x)', grid_y,1), # h1
-          2 .+repeat(sin.(x)', grid_y,1), # h2
-          repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x), # q
-    );
-=#
-#=
-
-
-ISDict = Dict("A" => MJO_State( ##PP = 15000
-          zeros(grid_y, grid_x),                                       # m1
-          zeros(grid_y, grid_x),                                       # n1
-          zeros(grid_y, grid_x),                                       # m2
-          zeros(grid_y, grid_x),                                       # n2
-          ones(grid_y, grid_x),                                        # h1
-          ones(grid_y, grid_x),                                   # h2
-          repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x) # q
-    ), 
-    "B" => MJO_State(
-          repeat(range(1,stop=2, length=grid_y), 1, grid_x), # m1
-          repeat(range(3,stop=4, length=grid_x)', grid_y,1), # n1
-          repeat(range(1,stop=2, length=grid_y), 1, grid_x), # m2
-          repeat(range(3,stop=4, length=grid_x)',grid_y, 1), # n2
-          ones(grid_y, grid_x),                     # h1
-          ones(grid_y, grid_x),                     # h2
-          repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x) # q
-    ),
-    "C" => MJO_State( #PP = 5000
-          repeat(sin.(x)', grid_y,1), # m1
-          zeros(grid_y, grid_x),      # n1
-          repeat(sin.(x)', grid_y,1), # m2
-          zeros(grid_y, grid_x),      # n2
-          ones(grid_y, grid_x),       # h1
-          ones(grid_y, grid_x),       # h2
-          repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x) # q
-    ), 
-    "D" => MJO_State(
-          zeros(grid_y, grid_x),      # m1
-          repeat(sin.(y), 1, grid_x), # n1
-          zeros(grid_y, grid_x),      # m2
-          repeat(sin.(y), 1, grid_x), # n2
-          ones(grid_y, grid_x),       # h1
-          ones(grid_y, grid_x),       # h2
-          repeat(range(10.0^(-16.0), stop=0.2*params.Qs, length=grid_y), 1, grid_x) # q
-    ),
-    "E" => MJO_State(
-          zeros(grid_y, grid_x),                    # m1
-          zeros(grid_y, grid_x),                    # n1
-          zeros(grid_y, grid_x),                    # m2
-          zeros(grid_y, grid_x),                    # n2
-          2 .+repeat(sin.(x)', grid_y,1), # h1
-          2 .+repeat(sin.(x)', grid_y,1), # h2
-          repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x), # q
-    ),
-    "F" => MJO_State( #PP = 17500
-          repeat(sin.(x)', grid_y,1), # m1
-          repeat(sin.(y), 1, grid_x), # n1
-          repeat(sin.(x)', grid_y,1), # m2ev
-          repeat(sin.(y), 1, grid_x), # n2
-          repeat(range(1,stop=2,length=grid_y), 1, grid_x), # h1
-          repeat(range(2,stop=1,length=grid_y), 1, grid_x), # h2
-          repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x) # q
-    )
-) =#
-
-
-# Should have net north momentum = 0 (integral/sum) 
-# & zero at boundaries
-# check periodic boundary and make sure initial conditions are periodic in x
-# zero momenta and constant heightfields
-# random moisture field (random, or random then smooth it. )
-# show velocity instead of momenta DONE
-# see how long it takes for interesting moisture dynamics
-    # interesting == breaking code
-    # or dynamics 
-    # 20 days ish
-# github
-# future: RK4 (implicit maybe)
-
-# thoughts: make P be a function of concentration (instead of total water)
-# i.e. Q <- Q/h1, Qs a different appropriate parameter 
-
-
-
-
