@@ -49,7 +49,7 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; fill_bool::Bool=
     end
 end
 
-@inline function savecontour(state::MJO_State, ii::String)
+@inline function savecontour(state::MJO_State, ii::String; draw::Function=contour)
     for f in fieldnames(MJO_State)
         evolfield = 1
         if f == :m1 || f ==:n1
@@ -61,9 +61,10 @@ end
         end
         GR.figure(size=(9,1))
         savefig(
-            contour(
+            draw(
                 evolfield,
-                aspect_ratio=1
+                aspect_ratio=1,
+                # fill=true
                 ),
             "../movies/"*string(f)*"/"*ii
             )
