@@ -92,80 +92,25 @@ function f_euler_contour(
     end
 end
 
-#function genInitSr(seed::Int)
-#    random
-
-
-# This is unit test E. 
-x = range(0, stop=params.lon[end]*pi/180, length=grid_x);
-ISE = MJO_State(
-          zeros(grid_y, grid_x),                    # m1
-          zeros(grid_y, grid_x),                    # n1
-          zeros(grid_y, grid_x),                    # m2
-          zeros(grid_y, grid_x),                    # n2
-          2 .+repeat(sin.(x)', grid_y,1), # h1
-          2 .+repeat(sin.(x)', grid_y,1), # h2
-          repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x), # q
-    );
-#=
-
-y = range(0, stop = 2*pi, length = grid_y);
-ISDict = Dict("A" => MJO_State( ##PP = 15000
-          zeros(grid_y, grid_x),                                       # m1
-          zeros(grid_y, grid_x),                                       # n1
-          zeros(grid_y, grid_x),                                       # m2
-          zeros(grid_y, grid_x),                                       # n2
-          ones(grid_y, grid_x),                                        # h1
-          ones(grid_y, grid_x),                                   # h2
-          repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x) # q
-    ), 
-    "B" => MJO_State(
-          repeat(range(1,stop=2, length=grid_y), 1, grid_x), # m1
-          repeat(range(3,stop=4, length=grid_x)', grid_y,1), # n1
-          repeat(range(1,stop=2, length=grid_y), 1, grid_x), # m2
-          repeat(range(3,stop=4, length=grid_x)',grid_y, 1), # n2
-          ones(grid_y, grid_x),                     # h1
-          ones(grid_y, grid_x),                     # h2
-          repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x) # q
-    ),
-    "C" => MJO_State( #PP = 5000
-          repeat(sin.(x)', grid_y,1), # m1
-          zeros(grid_y, grid_x),      # n1
-          repeat(sin.(x)', grid_y,1), # m2
-          zeros(grid_y, grid_x),      # n2
-          ones(grid_y, grid_x),       # h1
-          ones(grid_y, grid_x),       # h2
-          repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x) # q
-    ), 
-    "D" => MJO_State(
-          zeros(grid_y, grid_x),      # m1
-          repeat(sin.(y), 1, grid_x), # n1
-          zeros(grid_y, grid_x),      # m2
-          repeat(sin.(y), 1, grid_x), # n2
-          ones(grid_y, grid_x),       # h1
-          ones(grid_y, grid_x),       # h2
-          repeat(range(10.0^(-16.0), stop=0.2*params.Qs, length=grid_y), 1, grid_x) # q
-    ),
-    "E" => MJO_State(
-          zeros(grid_y, grid_x),                    # m1
-          zeros(grid_y, grid_x),                    # n1
-          zeros(grid_y, grid_x),                    # m2
-          zeros(grid_y, grid_x),                    # n2
-          2 .+repeat(sin.(x)', grid_y,1), # h1
-          2 .+repeat(sin.(x)', grid_y,1), # h2
-          repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x), # q
-    ),
-    "F" => MJO_State( #PP = 17500
-          repeat(sin.(x)', grid_y,1), # m1
-          repeat(sin.(y), 1, grid_x), # n1
-          repeat(sin.(x)', grid_y,1), # m2ev
-          repeat(sin.(y), 1, grid_x), # n2
-          repeat(range(1,stop=2,length=grid_y), 1, grid_x), # h1
-          repeat(range(2,stop=1,length=grid_y), 1, grid_x), # h2
-          repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x) # q
-    )
-) =#
-
+function genInitSr(M::Int)
+    for i = 1 : M
+        h = 0.0001;
+        N = 2000;
+        every = 10
+        f_euler_contour(
+            MJO_State(
+                zeros(grid_y, grid_x), #m1
+                zeros(grid_y, grid_x), #n1
+                zeros(grid_y, grid_x), #m2
+                zeros(grid_y, grid_x), #m2
+                ones(grid_y, grid_x),  #h1
+                ones(grid_y, grid_x),   #h2
+                rand(grid_y, grid_x), #q
+                ),
+            params, h, N, every, "R"*str(i)
+            )
+    end
+end
 
 # Should have net north momentum = 0 (integral/sum) 
 # & zero at boundaries
@@ -182,6 +127,7 @@ ISDict = Dict("A" => MJO_State( ##PP = 15000
 
 # thoughts: make P be a function of concentration (instead of total water)
 # i.e. Q <- Q/h1, Qs a different appropriate parameter 
+# try getting rid of div terms system of 3 equations
 
 
 

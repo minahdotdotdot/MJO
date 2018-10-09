@@ -58,7 +58,8 @@ function f_euler_contour(
     h::Float64, 
     N::Int, 
     every::Int,
-    str::String
+    str::String;
+    draw::Function=contour
     )
     tend = deepcopy(initial_state)
     state = deepcopy(initial_state)
@@ -66,14 +67,44 @@ function f_euler_contour(
     for i = 2 : N+1
         dxdt(params, state, tend);
         if istherenan(tend)==true || isthereinf(tend)==true
-            error("We've got a NaN at "*string(i)*"!!! \n")
+            return "We've got a NaN at "*string(i)*"!!! \n"
         end
         state = state + h * tend;
         if rem(i,every)==1
-            savecontour(state, str*string(1+div(i,every)))
+            savecontour(state, str*string(1+div(i,every)), draw=draw)
         end
     end
 end
+
+function genInitSr(M::Int, str::String; draw::Function=contour)
+    ICqs = Array{Array{Float64,2},1}(undef, M)
+    for i = 1 : M
+        ICqs[i] = rand(grid_y, grid_x);
+        h = 0.0001;
+        N = 2000;
+        every = 10;
+        evol = f_euler_contour(
+            MJO_State(
+                zeros(grid_y, grid_x), #m1
+                zeros(grid_y, grid_x), #n1
+                zeros(grid_y, grid_x), #m2
+                zeros(grid_y, grid_x), #m2
+                ones(grid_y, grid_x),  #h1
+                ones(grid_y, grid_x),   #h2
+                ICqs[i], #q
+                ),
+            params, h, N, every, str*string(i)*"_",
+            draw=draw
+            )
+        if typeof(evol)==String
+            print(string(i)* ": "*evol)
+        else
+            print(string(i)* ": Done at time-step "*string(N))
+        end
+    end
+    return ICqs
+end
+#=
 
 # This is unit test E. 
 x = range(0, stop=params.lon[end]*pi/180, length=grid_x);
@@ -87,7 +118,7 @@ ISE = MJO_State(
           2 .+repeat(sin.(x)', grid_y,1), # h2
           repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x), # q
     );
-
+=#
 #=
 
 

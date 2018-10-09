@@ -16,3 +16,5 @@ function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::I
     end
     return evol
 end
+
+## TODO: RK4? implicit schemes?
