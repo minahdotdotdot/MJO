@@ -1,26 +1,7 @@
 include("../codes/mjo_a.jl");
-
+include("../codes/time_step.jl")
 
 using PyPlot, Printf, JLD2, FileIO
-
-function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::Int, every::Int)
-    tend = deepcopy(initial_state)
-    evol = Array{MJO_State,1}(undef,div(N, every)+1)
-    evol[1] = initial_state
-    state = deepcopy(initial_state)
-    for i = 2 : N+1
-        dxdt(params, state, tend);
-        if istherenan(tend) == true || isthereinf(tend) ==true
-            return evol[1:div(i, every)]
-        end
-        state = state + h * tend;
-        if rem(i,every) == 1
-            evol[1+div(i, every)] = state
-        end
-        
-    end
-    return evol
-end
 
 function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:contourf)
     for f in fieldnames(MJO_State)
@@ -126,56 +107,6 @@ ISE = MJO_State(
           2 .+repeat(sin.(x)', grid_y,1), # h2
           repeat(range(10.0^(-16.0), stop=1.1*params.Qs, length=grid_y), 1, grid_x), # q
     );
-#=
-using Plots
-gr()
-function savecontourmaps(evol::Array{MJO_State,1}, str::String; fill_bool::Bool=true)
-    for f in fieldnames(MJO_State)
-        evolfield = 1
-        if f == :m1 || f ==:n1
-            evolfield = elemdiv(getproperty(evol, f), getproperty(evol, :h1))
-        elseif f == :m2 || f ==:n2
-            evolfield = elemdiv(getproperty(evol, f), getproperty(evol, :h2))
-        else
-            evolfield = getproperty(evol, f)
-        end
-        minval = minimum(evolfield);
-        maxval = maximum(evolfield);
-        for j = 1 : length(evolfield)
-            savefig(
-                contour(
-                    evolfield[j][1:end-1, 2:end-1],
-                    aspect_ratio=1,
-                    clims=(minval, maxval),
-                    fill=fill_bool
-                    ),
-                "../movies/"*string(f)*"/"*str*string(j)
-                )
-        end
-    end
-end
-
-@inline function savecontour(state::MJO_State, ii::String)
-    for f in fieldnames(MJO_State)
-        evolfield = 1
-        if f == :m1 || f ==:n1
-            evolfield = getproperty(state,f)[1:end-1, 2:end-1]./getproperty(state,:h1)[1:end-1, 2:end-1];
-        elseif f ==:m2 || f ==:n2
-            evolfield = getproperty(state,f)[1:end-1, 2:end-1]./getproperty(state,:h2)[1:end-1, 2:end-1];
-        else
-            evolfield = getproperty(state,f)[1:end-1, 2:end-1];
-        end
-        GR.figure(size=(9,1))
-        savefig(
-            contour(
-                evolfield,
-                aspect_ratio=1
-                ),
-            "../movies/"*string(f)*"/"*ii
-            )
-    end
-end
-=#
 #=
 
 y = range(0, stop = 2*pi, length = grid_y);
