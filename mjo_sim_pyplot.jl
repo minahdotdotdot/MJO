@@ -1,5 +1,6 @@
 include("../codes/mjo_a.jl");
 include("../codes/time_step.jl")
+include("../codes/smooth_data.jl")
 
 using PyPlot, Printf, JLD2, FileIO
 
@@ -104,13 +105,39 @@ function genInitSr(M::Int)
                 zeros(grid_y, grid_x), #m2
                 zeros(grid_y, grid_x), #m2
                 ones(grid_y, grid_x),  #h1
-                ones(grid_y, grid_x),   #h2
+                ones(grid_y, grid_x),  #h2
                 rand(grid_y, grid_x), #q
                 ),
             params, h, N, every, "R"*str(i)
             )
     end
 end
+
+function genInitSr(smoothed::Bool=true)
+    if smoothed==true 
+        return MJO_State(
+            zeros(grid_y, grid_x),        #m1
+            zeros(grid_y, grid_x),        #n1
+            zeros(grid_y, grid_x),        #m2
+            zeros(grid_y, grid_x),        #m2
+            ones(grid_y, grid_x),         #h1
+            ones(grid_y, grid_x),         #h2
+            smoother(rand(grid_y,grid_x)) #q
+            )
+    else
+        return MJO_State(
+            zeros(grid_y, grid_x),        #m1
+            zeros(grid_y, grid_x),        #n1
+            zeros(grid_y, grid_x),        #m2
+            zeros(grid_y, grid_x),        #m2
+            ones(grid_y, grid_x),         #h1
+            ones(grid_y, grid_x),         #h2
+            rand(grid_y, grid_x)          #q
+            )
+    end
+end
+
+
 
 # Should have net north momentum = 0 (integral/sum) 
 # & zero at boundaries

@@ -1,5 +1,6 @@
 include("../codes/mjo_a.jl");
 include("../codes/time_step.jl")
+include("../codes/smooth_data.jl")
 
 using Plots, Printf, JLD2, FileIO
 gr()
@@ -76,31 +77,26 @@ function f_euler_contour(
     end
 end
 
-function genInitSr(M::Int, str::String; draw::Function=contour)
-    ICqs = Array{Array{Float64,2},1}(undef, M)
-    for i = 1 : M
-        ICqs[i] = rand(grid_y, grid_x);
-        h = 0.0001;
-        N = 2000;
-        every = 10;
-        evol = f_euler_contour(
-            MJO_State(
-                zeros(grid_y, grid_x), #m1
-                zeros(grid_y, grid_x), #n1
-                zeros(grid_y, grid_x), #m2
-                zeros(grid_y, grid_x), #m2
-                ones(grid_y, grid_x),  #h1
-                ones(grid_y, grid_x),   #h2
-                ICqs[i], #q
-                ),
-            params, h, N, every, str*string(i)*"_",
-            draw=draw
+function genInitSr(smoothed::Bool=true)
+    if smoothed==true 
+        return MJO_State(
+            zeros(grid_y, grid_x),        #m1
+            zeros(grid_y, grid_x),        #n1
+            zeros(grid_y, grid_x),        #m2
+            zeros(grid_y, grid_x),        #m2
+            ones(grid_y, grid_x),         #h1
+            ones(grid_y, grid_x),         #h2
+            smoother(rand(grid_y,grid_x)) #q
             )
-        if typeof(evol)==String
-            print(string(i)* ": "*evol)
-        else
-            print(string(i)* ": Done at time-step "*string(N))
-        end
+    else
+        return MJO_State(
+            zeros(grid_y, grid_x),        #m1
+            zeros(grid_y, grid_x),        #n1
+            zeros(grid_y, grid_x),        #m2
+            zeros(grid_y, grid_x),        #m2
+            ones(grid_y, grid_x),         #h1
+            ones(grid_y, grid_x),         #h2
+            rand(grid_y, grid_x)          #q
+            )
     end
-    return ICqs
 end

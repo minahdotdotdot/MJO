@@ -1,3 +1,5 @@
+include("smooth_data.jl")
+
 function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::Int, every::Int)
     tend = deepcopy(initial_state)
     evol = Array{MJO_State,1}(undef,div(N, every)+1)
