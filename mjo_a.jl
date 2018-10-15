@@ -35,13 +35,14 @@ struct MJO_params
     Tratio    :: Float64 # :L / (U*T_RC)
 
     PP        :: Float64 # Normalizing constant for C&M precipitation function.
+    KK        :: Float64 # KK*Δ(quantity), need to meet CFL : KK < delt_x^2/h_time
 
     MJO_params(
         LL, HH, UU, QQ, T_RC, T_Q,
         g, RE, 
         AA, BB, DD, Qs, B, 
         deg, lat_range, lon_range, 
-        PP
+        PP, h_time
         ) =
     new(copy(LL), copy(HH), copy(UU), copy(QQ), copy(T_RC), copy(T_Q),
         copy(g), copy(RE),
@@ -51,7 +52,8 @@ struct MJO_params
         pi*copy(RE)*(lat_range[1]-deg/2: deg: lat_range[2]+deg/2)/(180.0*copy(LL)),
         180.0*copy(LL)/(copy(deg)*pi*copy(RE)), 180.0*copy(LL)/(copy(deg)*pi*copy(RE)),
         4.0*pi*LL^2/(3600.0*24.0*UU*RE), g*HH/UU^2, BB*QQ/HH, LL/(UU*T_RC), 
-        copy(PP))
+        copy(PP), 0.95*(copy(deg)*pi*copy(RE))^2/(180.0*copy(LL))^2/h_time
+        )
 end
 
 struct MJO_State
@@ -249,18 +251,9 @@ end
 end
 
 @inline function div_flux(
-        m::Array{T, 2}, n::Array{T, 2}, h::Array{T, 2}, q::Array{T, 2}, ii::Int64, jj::Int64,
+        m::Array{T, 2}, n::Array{T, 2}, h::Array{T, 2}, q::Array{T, 2}, 
+        ii::Int64, iii::Int64, iiii::Int64, jj::Int64,
         delt_x::T, delt_y::T) where T<:Real
-    #Account for zonal periodicity.
-    iii = ii  #TODO(minah): annotate what this index is.
-    iiii = ii  #TODO(minah): annotate what this index is.
-    #TODO: is it possible to eliminate these branching points in this inner loop?
-    if ii == 1
-        iii = 1441 # to satisfy iii-1 = 1440
-    elseif ii == 1440
-        iiii = 0 #to satisfy iiii+1 = 1
-    end
-
     return (
         .25*delt_x*(
             +(m[jj,ii]/h[jj,ii] + m[jj,iiii+1]/h[jj,iiii+1])*(q[jj,ii]+q[jj,iiii+1])
@@ -272,6 +265,15 @@ end
             )
         )
 end
+
+@inline function diffusion(q::Array{T,2}, ii::Int64, iii::Int64, iiii::Int64, jj::Int64, 
+    delt_x::T, delt_y::T) where T <:Real
+    return (
+        delt_x^2*(q[jj,iiii+1]-2*q[jj,ii]+q[jj,iii-1])
+        +delt_y^2*(q[jj+1,ii]-2*q[jj,ii]+q[jj-1,ii])
+        )
+end
+    
 
 @inline function h_sum(h1, h2, jj, ii)
     return h1[jj,ii] + h2[jj,ii]
@@ -312,13 +314,15 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
     DD     = params.DD            :: Float64
     T_Q    = params.T_Q           :: Float64
     PP     = params.PP            :: Float64
+    KK     = params.KK            :: Float64
 
     # Ghost cells
 
     # Iterate over longitudinal direction.
     for ii = 1 : length(params.lon)
-        iii = ii  #Use for ii-1  
-        iiii = ii #Use for ii+1  
+        # Account for zonal periodicity
+        iii = ii  # left index: use for ii-1  
+        iiii = ii # right index: use for ii+1  
 
         #Boundary conditions in lon: lon[1] = 0 = 360, lon[end] = long[1440] = 359.75
         if ii == 1
@@ -330,7 +334,7 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
         end
 
         # Ghost cells
-        set_ghost_cells(state,ii)
+        set_ghost_cells(state, ii)
         #println("column: ",ii)
 
         # Iterate over latitudinal direction.
@@ -341,7 +345,7 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
             ### MOMENTUM
 
             out.m1[jj,ii] = (
-                - div_flux(state.m1, state.n1, state.h1, state.m1, ii, jj, delt_x, delt_y)
+                - div_flux(state.m1, state.n1, state.h1, state.m1, ii, iii, iiii, jj, delt_x, delt_y)
                 + params.Ro*params.y[jj]*state.n1[jj,ii]                             #=+1/Ro*n1=#
                 - params.Fr*(
                     state.h1[jj,ii] * .5*delt_x*(h_sum(state.h1,state.h2,jj,iiii+1)-h_sum(state.h1,state.h2,jj,iii-1))
@@ -351,7 +355,7 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
             #println("m1 done.")
 
             out.n1[jj,ii] = (
-                - div_flux(state.m1, state.n1, state.h1, state.n1, ii, jj, delt_x, delt_y)
+                - div_flux(state.m1, state.n1, state.h1, state.n1, ii, iii, iiii, jj, delt_x, delt_y)
                 - params.Ro*params.y[jj]*state.m1[jj,ii]                             #=-1/Ro*m1=#
                 - params.Fr*(
                     state.h1[jj,ii] * .5*delt_y*(h_sum(state.h1,state.h2,jj+1,ii)-h_sum(state.h1,state.h2,jj-1,ii))
@@ -361,7 +365,7 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
             #println("n1 done.")
 
             out.m2[jj,ii] = (
-                - div_flux(state.m2, state.n2, state.h2, state.m2, ii, jj, delt_x, delt_y)
+                - div_flux(state.m2, state.n2, state.h2, state.m2, ii, iii, iiii, jj, delt_x, delt_y)
                 + params.Ro*params.y[jj]*state.n2[jj,ii]                             #=+1/Ro*n2=#
                 - params.Fr*(
                     state.h2[jj,ii] * .5*delt_x*(h_sum_a(state.h1,state.h2,AA,jj,iiii+1) - h_sum_a(state.h1,state.h2,AA,jj,iii-1))
@@ -372,7 +376,7 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
 
 
             out.n2[jj,ii] = (
-                - div_flux(state.m2, state.n2, state.h2, state.n2, ii, jj, delt_x, delt_y)
+                - div_flux(state.m2, state.n2, state.h2, state.n2, ii, iii, iiii, jj, delt_x, delt_y)
                 - params.Ro*params.y[jj]*state.m2[jj,ii]                             #=-1/Ro*m2=#
                 - params.Fr*(
                     state.h2[jj,ii] * .5*delt_y*(h_sum_a(state.h1,state.h2,AA,jj+1,ii)-h_sum_a(state.h1,state.h2,AA,jj-1,ii))
@@ -387,6 +391,7 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
                 -.5*delt_x * (state.m1[jj,iiii+1] - state.m1[jj,iii-1])             #=∂x m_1=#
                 -.5*delt_y * (state.n1[jj+1,ii] - state.n1[jj-1,ii])                #=∂y n_1=#
                 - value_P_RC
+                + KK*diffusion(state.h1, ii, iii, iiii, jj, delt_x, delt_y)
                 )
             #println("h1 done.")
 
@@ -394,13 +399,15 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
                 -.5*delt_x * (state.m2[jj,iiii+1] - state.m2[jj,iii-1])             #=∂x m_2=#
                 -.5*delt_y * (state.n2[jj+1,ii] - state.n2[jj-1,ii])                #=∂y n_2=#
                 + value_P_RC
+                + KK*diffusion(state.h2, ii, iii, iiii, jj, delt_x, delt_y)
                 )
             #println("h2 done.")
 
             ### MOISTURE
             out.q[jj,ii] = (
-                - div_flux(state.m1, state.n1, state.h1, state.q, ii, jj, delt_x, delt_y)
+                - div_flux(state.m1, state.n1, state.h1, state.q, ii, iii, iiii, jj, delt_x, delt_y)
                 +(-1.0+Qs./(DD*state.q[jj,ii]))*P(LL,UU,QQ,B,Qs,state.q[jj,ii], T_Q,PP) #=\hat{P}(Q)=#
+                + KK*diffusion(state.q, ii, iii, iiii, jj, delt_x, delt_y)
                 )
             #println("q done.")
         end
@@ -409,25 +416,28 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
 end
 
 ####################################################################################################
-
-params = MJO_params(10.0^6,       # LL
-                    5000.0,       # HH
-                    5.0,          # UU
-                    0.05,        # QQ
-                    1382400.0,    # T_RC
-                    345600,      # T_Q
-                    9.80665,     #  g
-                    6371000,     # RE
-                    1.0184,      # AA
-                    750.0,        # BB
-                    1.1,         # DD
-                    .058,        # Qs
-                    11.4,        # B
-                    0.25,        # degree
-                    [-20.0, 20.0], # lat_range
-                    [0.0, 360.0],  # lon_range
-                    17500.0, # PP
-)
-
+function gen_params(h_time::Float64)
+    return MJO_params(10.0^6, # LL
+                    5000.0,            # HH
+                    5.0,               # UU
+                    0.05,              # QQ
+                    1382400.0,         # T_RC
+                    345600,            # T_Q
+                    9.80665,           #  g
+                    6371000,           # RE
+                    1.0184,            # AA
+                    750.0,             # BB
+                    1.1,               # DD
+                    .058,              # Qs
+                    11.4,              # B
+                    0.25,              # degree
+                    [-20.0, 20.0],     # lat_range
+                    [0.0, 360.0],      # lon_range
+                    17500.0,           # PP
+                    h_time
+                    )
+end
+h_time = 0.0001
+params=gen_params(h_time);
 grid_y = length(params.lat);
 grid_x = length(params.lon);
