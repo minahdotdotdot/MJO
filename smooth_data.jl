@@ -1,5 +1,35 @@
-function smoother(q::Array{Float64,2}, stencil::Array{Int,2}; 
-    periodic::Bool=true)
+function genStencil(m::Int, n::Int)
+    # generates a gaussian kernel 
+    if isodd.([m,n])==[true, true]
+        x , y = 0, 0;
+        stencil = Array{Float64, 2}(undef, m, n);
+        if m > n
+            x = range(-1, stop=1, length=n)
+            y = vcat(
+                range(0, step=-step(x), length=ceil(Int,m/2))[end:-1:2], 
+                range(0, step=step(x), length=ceil(Int,m/2))
+                )
+        elseif m < n
+            y = range(-1, stop=1, length=m)
+            x = vcat(
+                range(0, step=-step(y), length=ceil(Int,n/2))[end:-1:2], 
+                range(0, step=step(y), length=ceil(Int,n/2))
+                )
+        else
+            x = range(-1, stop=1, length=n)
+            y = copy(x)
+        end
+        for j = 1 : m
+            for i = 1 : n
+                stencil[j,i] = exp(-x[i]^2-y[j]^2)
+            end
+        end
+        return stencil
+    end
+end
+
+function smoother(q::Array{Float64,2}, stencil::Array{T,2}; 
+    periodic::Bool=true) where T<:Real
     m, n = size(stencil);
     mm = floor(Int,m/2)
     nn = floor(Int,n/2)
