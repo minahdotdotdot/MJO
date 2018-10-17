@@ -1,6 +1,6 @@
-include("../codes/mjo_a.jl");
-include("../codes/time_step.jl")
-include("../codes/smooth_data.jl")
+include("mjo_a.jl");
+include("time_step.jl")
+include("smooth_data.jl")
 
 using Plots, Printf, JLD2, FileIO
 gr()
@@ -9,9 +9,9 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; fill_bool::Bool=
     for f in fieldnames(MJO_State)
         evolfield = 1
         if f == :m1 || f ==:n1
-            evolfield = elemdiv(getproperty(evol, f)[2:end-1, :], getproperty(evol, :h1)[2:end-1, :])
+            evolfield = elemdiv(getproperty(evol, f), getproperty(evol, :h1))
         elseif f == :m2 || f ==:n2
-            evolfield = elemdiv(getproperty(evol, f)[2:end-1, :], getproperty(evol, :h2)[2:end-1, :])
+            evolfield = elemdiv(getproperty(evol, f), getproperty(evol, :h2))
         else
             evolfield = getproperty(evol, f)[2:end-1, :]
         end
@@ -20,7 +20,7 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; fill_bool::Bool=
         for j = 1 : length(evolfield)
             savefig(
                 contour(
-                    evolfield[j],
+                    evolfield[j][2:end-1, :],
                     aspect_ratio=1,
                     clims=(minval, maxval),
                     fill=fill_bool
@@ -77,18 +77,8 @@ function f_euler_contour(
     end
 end
 
-function genInitSr(smoothed::Bool=true)
-    if smoothed==true 
-        return MJO_State(
-            zeros(grid_y, grid_x),        #m1
-            zeros(grid_y, grid_x),        #n1
-            zeros(grid_y, grid_x),        #m2
-            zeros(grid_y, grid_x),        #m2
-            ones(grid_y, grid_x),         #h1
-            ones(grid_y, grid_x),         #h2
-            smoother(rand(grid_y,grid_x)) #q
-            )
-    else
+function genInitSr(;stencil::Array{T,2}=zeros(0,0)) where T<:Real
+    if stencil==zeros(0,0) # q is random field
         return MJO_State(
             zeros(grid_y, grid_x),        #m1
             zeros(grid_y, grid_x),        #n1
@@ -98,5 +88,16 @@ function genInitSr(smoothed::Bool=true)
             ones(grid_y, grid_x),         #h2
             rand(grid_y, grid_x)          #q
             )
+    else              # q is random field smoothed
+        return MJO_State(
+            zeros(grid_y, grid_x),        #m1
+            zeros(grid_y, grid_x),        #n1
+            zeros(grid_y, grid_x),        #m2
+            zeros(grid_y, grid_x),        #m2
+            ones(grid_y, grid_x),         #h1
+            ones(grid_y, grid_x),         #h2
+            smoother(rand(grid_y,grid_x), stencil) #q
+            )
+   
     end
 end

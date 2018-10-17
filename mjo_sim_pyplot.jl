@@ -1,6 +1,6 @@
-include("../codes/mjo_a.jl");
-include("../codes/time_step.jl")
-include("../codes/smooth_data.jl")
+include("mjo_a.jl");
+include("time_step.jl")
+include("smooth_data.jl")
 
 using PyPlot, Printf, JLD2, FileIO
 
@@ -113,18 +113,8 @@ function genInitSr(M::Int)
     end
 end
 
-function genInitSr(smoothed::Bool=true)
-    if smoothed==true 
-        return MJO_State(
-            zeros(grid_y, grid_x),        #m1
-            zeros(grid_y, grid_x),        #n1
-            zeros(grid_y, grid_x),        #m2
-            zeros(grid_y, grid_x),        #m2
-            ones(grid_y, grid_x),         #h1
-            ones(grid_y, grid_x),         #h2
-            smoother(rand(grid_y,grid_x)) #q
-            )
-    else
+function genInitSr(;stencil::Array{T,2}=[[0]]) where T<:Real
+    if stencil==[[0]] # q is random field
         return MJO_State(
             zeros(grid_y, grid_x),        #m1
             zeros(grid_y, grid_x),        #n1
@@ -133,6 +123,16 @@ function genInitSr(smoothed::Bool=true)
             ones(grid_y, grid_x),         #h1
             ones(grid_y, grid_x),         #h2
             rand(grid_y, grid_x)          #q
+            )
+    else              # q is random field smoothed
+        return MJO_State(
+            zeros(grid_y, grid_x),        #m1
+            zeros(grid_y, grid_x),        #n1
+            zeros(grid_y, grid_x),        #m2
+            zeros(grid_y, grid_x),        #m2
+            ones(grid_y, grid_x),         #h1
+            ones(grid_y, grid_x),         #h2
+            smoother(rand(grid_y,grid_x), stencil) #q
             )
     end
 end

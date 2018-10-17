@@ -8,6 +8,7 @@ function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::I
     for i = 2 : N+1
         dxdt(params, state, tend);
         if istherenan(tend) == true || isthereinf(tend) ==true
+            print(i)
             return evol[1:div(i, every)]
         end
         state = state + h * tend;
