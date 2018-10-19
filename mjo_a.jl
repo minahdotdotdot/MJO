@@ -52,7 +52,7 @@ struct MJO_params
         pi*copy(RE)*(lat_range[1]-deg/2: deg: lat_range[2]+deg/2)/(180.0*copy(LL)),
         180.0*copy(LL)/(copy(deg)*pi*copy(RE)), 180.0*copy(LL)/(copy(deg)*pi*copy(RE)),
         4.0*pi*LL^2/(3600.0*24.0*UU*RE), g*HH/UU^2, BB*QQ/HH, LL/(UU*T_RC), 
-        copy(PP), 0.95*(copy(deg)*pi*copy(RE))^2/(180.0*copy(LL))^2/h_time
+        copy(PP), 0.1*(copy(deg)*pi*copy(RE))^2/(180.0*copy(LL))^2/h_time
         )
 end
 
@@ -254,7 +254,7 @@ end
         m::Array{T, 2}, n::Array{T, 2}, h::Array{T, 2}, q::Array{T, 2}, 
         ii::Int64, iii::Int64, iiii::Int64, jj::Int64,
         delt_x::T, delt_y::T) where T<:Real
-    return (
+    #=return (
         .25*delt_x*(
             +(m[jj,ii]/h[jj,ii] + m[jj,iiii+1]/h[jj,iiii+1])*(q[jj,ii]+q[jj,iiii+1])
             - (m[jj,iii-1]/h[jj,iii-1] + m[jj,ii]/h[jj,ii])*(q[jj,iii-1]+q[jj,ii])
@@ -262,6 +262,16 @@ end
         .25*delt_y*(
             +(n[jj,ii]/h[jj,ii] + n[jj+1,ii]/h[jj+1,ii])*(q[jj,ii]+q[jj+1,ii])
             -(n[jj-1,ii]/h[jj-1,ii] + n[jj,ii]/h[jj,ii])*(q[jj-1,ii]+q[jj,ii])
+            )
+        )=#
+    return (
+        .5*delt_x*(
+        (m[jj,ii]+m[jj,iiii+1])/(h[jj,ii]+h[jj,iiii+1])*(q[jj,ii]+q[jj,iiii+1])
+        - (m[jj,iii-1]+m[jj,ii])/(h[jj,iii-1]+h[jj,ii])*(q[jj,iii-1]+q[jj,ii])
+        ) +
+        .5*delt_y*(
+            (n[jj,ii]+n[jj+1,ii])/(h[jj,ii]+h[jj+1,ii])*(q[jj,ii]+q[jj+1,ii])
+            -(n[jj-1,ii]+n[jj,ii])/(h[jj-1,ii]+h[jj,ii])*(q[jj-1,ii]+q[jj,ii])
             )
         )
 end
@@ -284,7 +294,7 @@ end
 end
 
 @inline function set_ghost_cells(state, ii)
-    state.h1[1,ii]   = 2.0*state.h1[2,ii] - state.h1[3,ii]
+    #= state.h1[1,ii]   = 2.0*state.h1[2,ii] - state.h1[3,ii]
     state.h2[1,ii]   = 2.0*state.h2[2,ii] - state.h2[3,ii]
     state.h1[end,ii] = 2.0*state.h1[end-1,ii] - state.h1[end-2,ii]
     state.h2[end,ii] = 2.0*state.h2[end-1,ii] - state.h2[end-2,ii]
@@ -292,7 +302,32 @@ end
     state.n1[1,ii]   = state.h1[1,ii] / state.h1[2,ii] * state.n1[2,ii]
     state.n2[1,ii]   = state.h2[1,ii] / state.h2[2,ii] * state.n2[2,ii]
     state.n1[end,ii] = state.h1[end,ii] / state.h1[end-1,ii] * state.n1[end-1,ii]
-    state.n2[end,ii] = state.h2[end,ii] / state.h2[end-1,ii] * state.n2[end-1,ii]
+    state.n2[end,ii] = state.h2[end,ii] / state.h2[end-1,ii] * state.n2[end-1,ii] =#
+
+    #=Ghost cells impose meridional boundary coniditons located at:
+    j=1.5 = "-20 deg" & j=end-.5 = "20 deg" =#
+
+    #= n_i(boundary)=0 =#
+    state.n1[1,ii]   = -state.n1[2,ii]
+    state.n1[end,ii] = -state.n1[end-1,ii]
+    state.n2[1,ii]   = -state.n2[2,ii]
+    state.n2[end,ii] = -state.n1[end-1,ii]
+
+    #= ∂yh_i(boundary)=0 =#
+    state.h1[1,ii]   = state.h1[2,ii]
+    state.h1[end,ii] = state.h1[end-1,ii]
+    state.h2[1,ii]   = state.h2[2,ii]
+    state.h2[end,ii] = state.h1[end-1,ii]
+
+    #= ∂ym_i(boundary)=0 =#
+    state.m1[1,ii]   = state.m1[2,ii]
+    state.m1[end,ii] = state.m1[end-1,ii]
+    state.m2[1,ii]   = state.m2[2,ii]
+    state.m2[end,ii] = state.m1[end-1,ii]
+
+    #= ∂yq(boundary)=0 =#
+    state.q[1,ii]   = state.q[2,ii]
+    state.q[end,ii] = state.q[end-1,ii]
 end
 
 # Compute tendency of the system.
@@ -329,8 +364,6 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
             iii = 1441 # to satisfy iii-1 = 1440
         elseif ii == 1440
             iiii = 0 #to satisfy iiii+1 = 1
-        else
-            set_ghost_cells(state, ii+1)
         end
 
         # Ghost cells
@@ -434,10 +467,11 @@ function gen_params(h_time::Float64)
                     [-20.0, 20.0],     # lat_range
                     [0.0, 360.0],      # lon_range
                     17500.0,           # PP
-                    h_time
+                    h_time             # time-step length
                     )
 end
-h_time = 0.0001
+
+h_time = 0.00005
 params=gen_params(h_time);
 grid_y = length(params.lat);
 grid_x = length(params.lon);
