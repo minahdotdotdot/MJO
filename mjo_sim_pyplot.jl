@@ -2,7 +2,7 @@ include("mjo_a.jl");
 include("time_step.jl")
 include("smooth_data.jl")
 
-using PyPlot, Printf, JLD2, FileIO
+using PyPlot, Printf;
 
 function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:contourf)
     for f in fieldnames(MJO_State)
