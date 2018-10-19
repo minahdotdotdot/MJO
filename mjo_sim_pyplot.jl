@@ -27,7 +27,7 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:co
                     evolfield[j],
                     vmin=minval,
                     vmax=maxval,
-                    cmap="inferno"#"PuOr"
+                    cmap="PuOr"
                 )
             );
             savefig(
@@ -58,7 +58,7 @@ end
                 params.lon, 
                 params.lat[2:end-1],  
                 evolfield,
-                cmap="inferno"#"PuOr"
+                cmap="PuOr"
             )
         );
         savefig(
@@ -90,26 +90,6 @@ function f_euler_contour(
         if rem(i,every)==1
             savecontour(state, str*string(1+div(i,every)))
         end
-    end
-end
-
-function genInitSr(M::Int)
-    for i = 1 : M
-        h = 0.0001;
-        N = 2000;
-        every = 10
-        f_euler_contour(
-            MJO_State(
-                zeros(grid_y, grid_x), #m1
-                zeros(grid_y, grid_x), #n1
-                zeros(grid_y, grid_x), #m2
-                zeros(grid_y, grid_x), #m2
-                ones(grid_y, grid_x),  #h1
-                ones(grid_y, grid_x),  #h2
-                rand(grid_y, grid_x), #q
-                ),
-            params, h, N, every, "R"*str(i)
-            )
     end
 end
 
