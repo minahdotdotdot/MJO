@@ -2,7 +2,7 @@ include("mjo_a.jl");
 include("time_step.jl")
 include("smooth_data.jl")
 
-using PyPlot, Printf;
+using PyPlot, Printf
 
 function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:contourf)
     for f in fieldnames(MJO_State)
@@ -113,8 +113,8 @@ function genInitSr(M::Int)
     end
 end
 
-function genInitSr(;stencil::Array{T,2}=[[0]]) where T<:Real
-    if stencil==[[0]] # q is random field
+function genInitSr(stencil::Array{T,2}=zeros(0,0)) where T<:Real
+    if stencil==zeros(0,0) # q is random field
         return MJO_State(
             zeros(grid_y, grid_x),        #m1
             zeros(grid_y, grid_x),        #n1
@@ -134,6 +134,7 @@ function genInitSr(;stencil::Array{T,2}=[[0]]) where T<:Real
             ones(grid_y, grid_x),         #h2
             smoother(rand(grid_y,grid_x), stencil) #q
             )
+   
     end
 end
 

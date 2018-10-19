@@ -77,7 +77,7 @@ function f_euler_contour(
     end
 end
 
-function genInitSr(;stencil::Array{T,2}=zeros(0,0)) where T<:Real
+function genInitSr(stencil::Array{T,2}=zeros(0,0)) where T<:Real
     if stencil==zeros(0,0) # q is random field
         return MJO_State(
             zeros(grid_y, grid_x),        #m1
