@@ -52,7 +52,7 @@ struct MJO_params
         pi*copy(RE)*(lat_range[1]-deg/2: deg: lat_range[2]+deg/2)/(180.0*copy(LL)),
         180.0*copy(LL)/(copy(deg)*pi*copy(RE)), 180.0*copy(LL)/(copy(deg)*pi*copy(RE)),
         4.0*pi*LL^2/(3600.0*24.0*UU*RE), g*HH/UU^2, BB*QQ/HH, LL/(UU*T_RC), 
-        copy(PP), 0.1*(copy(deg)*pi*copy(RE))^2/(180.0*copy(LL))^2/h_time
+        copy(PP), 0.01*(copy(deg)*pi*copy(RE))^2/(180.0*copy(LL))^2/h_time
         )
 end
 
@@ -175,7 +175,7 @@ end
 function maximum(evol::Array{MJO_State,1}, field::Symbol)
     M = maximum(getproperty(evol[1], field))
     for i = 2 : length(evol)
-        potentialmax = maximum(getproperty(evol[i], field)[1:end-1, 2:end-1])
+        potentialmax = maximum(getproperty(evol[i], field)[2:end-1, :])
         if M < potentialmax
             M = potentialmax
         end
@@ -190,7 +190,7 @@ end
 function minimum(evol::Array{MJO_State,1}, field::Symbol)
     M = minimum(getproperty(evol[1], field))
     for i = 2 : length(evol)
-        potentialmin = minimum(getproperty(evol[i], field)[1:end-1, 2:end-1])
+        potentialmin = minimum(getproperty(evol[i], field)[2:end-1, :])
         if M > potentialmin
             M = potentialmin
         end
