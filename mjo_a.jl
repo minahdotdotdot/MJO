@@ -52,7 +52,7 @@ struct MJO_params
         pi*copy(RE)*(lat_range[1]-deg/2: deg: lat_range[2]+deg/2)/(180.0*copy(LL)),
         180.0*copy(LL)/(copy(deg)*pi*copy(RE)), 180.0*copy(LL)/(copy(deg)*pi*copy(RE)),
         4.0*pi*LL^2/(3600.0*24.0*UU*RE), g*HH/UU^2, BB*QQ/HH, LL/(UU*T_RC), 
-        copy(PP), 0.01*(copy(deg)*pi*copy(RE))^2/(180.0*copy(LL))^2/h_time
+        copy(PP), 0.001*(copy(deg)*pi*copy(RE))^2/(180.0*copy(LL))^2/h_time
         )
 end
 
@@ -311,19 +311,19 @@ end
     state.n1[1,ii]   = -state.n1[2,ii]
     state.n1[end,ii] = -state.n1[end-1,ii]
     state.n2[1,ii]   = -state.n2[2,ii]
-    state.n2[end,ii] = -state.n1[end-1,ii]
+    state.n2[end,ii] = -state.n2[end-1,ii]
 
     #= ∂yh_i(boundary)=0 =#
     state.h1[1,ii]   = state.h1[2,ii]
     state.h1[end,ii] = state.h1[end-1,ii]
     state.h2[1,ii]   = state.h2[2,ii]
-    state.h2[end,ii] = state.h1[end-1,ii]
+    state.h2[end,ii] = state.h2[end-1,ii]
 
     #= ∂ym_i(boundary)=0 =#
     state.m1[1,ii]   = state.m1[2,ii]
     state.m1[end,ii] = state.m1[end-1,ii]
     state.m2[1,ii]   = state.m2[2,ii]
-    state.m2[end,ii] = state.m1[end-1,ii]
+    state.m2[end,ii] = state.m2[end-1,ii]
 
     #= ∂yq(boundary)=0 =#
     state.q[1,ii]   = state.q[2,ii]
