@@ -60,7 +60,7 @@ function RK4(initial_state::MJO_State, params::MJO_params, h::Float64, N::Int, e
         state = RK4_one(state, params, h)
         if istherenan(state)==true || isthereinf(state)==true
             print(i)
-            return(evol[1:div(i, every)]
+            return evol[1:div(i, every)]
         end
         if rem(i,every)==1
             evol[1+div(i, every)] = state
