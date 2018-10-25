@@ -52,7 +52,7 @@ struct MJO_params
         pi*copy(RE)*(lat_range[1]-deg/2: deg: lat_range[2]+deg/2)/(180.0*copy(LL)),
         180.0*copy(LL)/(copy(deg)*pi*copy(RE)), 180.0*copy(LL)/(copy(deg)*pi*copy(RE)),
         4.0*pi*LL^2/(3600.0*24.0*UU*RE), g*HH/UU^2, BB*QQ/HH, LL/(UU*T_RC), 
-        copy(PP), 0.001*(copy(deg)*pi*copy(RE))^2/(180.0*copy(LL))^2/h_time
+        copy(PP), 0.005*(copy(deg)*pi*copy(RE))^2/(180.0*copy(LL))^2/h_time
         )
 end
 
@@ -384,6 +384,7 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
                     state.h1[jj,ii] * .5*delt_x*(h_sum(state.h1,state.h2,jj,iiii+1)-h_sum(state.h1,state.h2,jj,iii-1))
                     )                                                               #=h_1∂x(h_1+h_2)=#
                 - state.m1[jj,ii]/state.h1[jj,ii]*value_P_RC
+                + KK*diffusion(state.m1, ii, iii, iiii, jj, delt_x, delt_y)
                 )
             #println("m1 done.")
 
@@ -394,7 +395,8 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
                     state.h1[jj,ii] * .5*delt_y*(h_sum(state.h1,state.h2,jj+1,ii)-h_sum(state.h1,state.h2,jj-1,ii))
                     )                                                               #=h_1∂y(h_1+h_2)=#
                 - state.n1[jj,ii]/state.h1[jj,ii]*value_P_RC
-                )
+                + KK*diffusion(state.n1, ii, iii, iiii, jj, delt_x, delt_y)
+                ) 
             #println("n1 done.")
 
             out.m2[jj,ii] = (
@@ -404,6 +406,7 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
                     state.h2[jj,ii] * .5*delt_x*(h_sum_a(state.h1,state.h2,AA,jj,iiii+1) - h_sum_a(state.h1,state.h2,AA,jj,iii-1))
                     )                                                               #=h_1∂x(h_1+\alpha* h_2)=#
                 + state.m1[jj,ii]/state.h1[jj,ii]*value_P_RC
+                + KK*diffusion(state.m2, ii, iii, iiii, jj, delt_x, delt_y)
                 )
             #println("m2 done.")
 
@@ -415,7 +418,8 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
                     state.h2[jj,ii] * .5*delt_y*(h_sum_a(state.h1,state.h2,AA,jj+1,ii)-h_sum_a(state.h1,state.h2,AA,jj-1,ii))
                     )                                                               #=h_1∂y(h_1+\alpha*h_2)=#
                 + state.n1[jj,ii]/state.h1[jj,ii]*value_P_RC
-                )
+                + KK*diffusion(state.n2, ii, iii, iiii, jj, delt_x, delt_y)
+		)
             #println("n2 done.")
 
             ### MASS
