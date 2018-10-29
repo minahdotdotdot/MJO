@@ -17,8 +17,8 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:co
         minval = minimum(evolfield);
         maxval = maximum(evolfield);
         for j = 1 : length(evolfield)
-            fig, ax = subplots(); 
-            fig[:set_size_inches](13,2); 
+            fig, ax = subplots(fig_size(13,2)); 
+            #fig[:set_size_inches](13,2); 
             ax[:set_aspect]("equal");
             fig[:colorbar](
                 ax[draw](
