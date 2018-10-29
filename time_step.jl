@@ -20,9 +20,7 @@ function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::I
     return evol
 end
 
-@inline function RK4_one(state::MJO_State, params::MJO_params, h::Float64)
-    tend = deepcopy(state);
-
+@inline function RK4_one(state::MJO_State, tend::MJO_State, params::MJO_params, h::Float64)
     #= # Option 1: Creates 4 variables, k1, k2, k3, k4, 
     # 3 scalar multiplications, 4 additions, 6 MJO_State variables at the end[2 initially +1 every stage]
     dxdt(params, state, tend);    
@@ -56,8 +54,9 @@ function RK4(initial_state::MJO_State, params::MJO_params, h::Float64, N::Int, e
     evol = Array{MJO_State,1}(undef, div(N, every)+1)
     evol[1] = initial_state
     state = deepcopy(initial_state)
+    tend = deepcopy(initial_state)
     for i = 2 : N+1
-        state = RK4_one(state, params, h)
+        state = RK4_one(state, tend, params, h)
         if istherenan(state)==true || isthereinf(state)==true
             print(i)
             return evol[1:div(i, every)]
