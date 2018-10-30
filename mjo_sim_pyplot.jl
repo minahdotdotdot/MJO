@@ -4,7 +4,7 @@ include("smooth_data.jl")
 
 using PyPlot, Printf
 
-function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:contourf)
+function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Function=contourf)#draw::Symbol=:contourf)
     for f in fieldnames(MJO_State)
         evolfield = 1
         if f == :m1 || f ==:n1
@@ -20,7 +20,16 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:co
             fig, ax = subplots(figsize=(13,2)); 
             #fig[:set_size_inches](13,2); 
             ax[:set_aspect]("equal");
-            fig[:colorbar](
+            colorbar(
+                draw(params.lon, 
+                    params.lat[2:end-1],  
+                    evolfield[j][2:end-1,:],
+                    vmin=minval,
+                    vmax=maxval,
+                    cmap="PuOr"
+                    )
+                );
+            #=fig[:colorbar](
                 ax[draw](
                     params.lon, 
                     params.lat[2:end-1],  
@@ -29,7 +38,7 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:co
                     vmax=maxval,
                     cmap="PuOr"
                 )
-            );
+            );=#
             savefig(
                 "../movies/"*string(f)*"/"*str*string(j),
                 pad_inches=.10, 
