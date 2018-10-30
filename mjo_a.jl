@@ -52,7 +52,7 @@ struct MJO_params
         pi*copy(RE)*(lat_range[1]-deg/2: deg: lat_range[2]+deg/2)/(180.0*copy(LL)),
         180.0*copy(LL)/(copy(deg)*pi*copy(RE)), 180.0*copy(LL)/(copy(deg)*pi*copy(RE)),
         4.0*pi*LL^2/(3600.0*24.0*UU*RE), g*HH/UU^2, BB*QQ/HH, LL/(UU*T_RC), 
-        copy(PP), 0.005*(copy(deg)*pi*copy(RE))^2/(180.0*copy(LL))^2/h_time
+        copy(PP), 0.01*(copy(deg)*pi*copy(RE))^2/(180.0*copy(LL))^2/h_time
         )
 end
 
@@ -475,7 +475,7 @@ function gen_params(h_time::Float64)
                     )
 end
 
-h_time = 0.00005
+h_time = 0.0009
 params=gen_params(h_time);
 grid_y = length(params.lat);
 grid_x = length(params.lon);
