@@ -4,7 +4,7 @@ include("smooth_data.jl")
 
 using PyPlot, Printf
 
-function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Function=contourf)#draw::Symbol=:contourf)
+function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:contourf)
     for f in fieldnames(MJO_State)
         evolfield = 1
         if f == :m1 || f ==:n1
@@ -20,16 +20,7 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Function=c
             fig, ax = subplots(); 
             fig[:set_size_inches](13,2); 
             ax[:set_aspect]("equal");
-            colorbar(
-                draw(params.lon, 
-                    params.lat[2:end-1],  
-                    evolfield[j][2:end-1,:],
-                    vmin=minval,
-                    vmax=maxval,
-                    cmap="PuOr"
-                    )
-                );
-            #=fig[:colorbar](
+            fig[:colorbar](
                 ax[draw](
                     params.lon, 
                     params.lat[2:end-1],  
@@ -38,7 +29,7 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Function=c
                     vmax=maxval,
                     cmap="PuOr"
                 )
-            );=#
+            );
             savefig(
                 "../movies/"*string(f)*"/"*str*string(j),
                 pad_inches=.10, 
@@ -101,6 +92,30 @@ function f_euler_contour(
         end
     end
 end
+
+function RK4_contour(
+    initial_state:: MJO_State, 
+    params::MJO_params, 
+    h::Float64, 
+    N::Int, 
+    every::Int,
+    str::String
+    )
+    tend = deepcopy(initial_state)
+    state = deepcopy(initial_state)
+    savecontour(initial_state, str*"1")
+    for i = 2 : N+1
+        RK4_one(state, tend, params, h)
+        if istherenan(tend)==true || isthereinf(tend)==true
+            error("We've got a NaN at "*string(i)*"!!! \n")
+        end
+        state = state + h * tend;
+        if rem(i,every)==1
+            savecontour(state, str*string(1+div(i,every)))
+        end
+    end
+end
+
 
 function genInitSr(stencil::Array{T,2}=zeros(0,0)) where T<:Real
     if stencil==zeros(0,0) # q is random field
