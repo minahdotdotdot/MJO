@@ -163,7 +163,7 @@ end
 function getproperty(evol::Array{MJO_State,1}, field::Symbol)
     onefield = Array{Array{Float64,2},1}(undef,length(evol))
     for i = 1 : length(evol)
-        onefield[i] = getproperty(evol[i],field)[2:end,:]
+        onefield[i] = getproperty(evol[i],field)[2:end-1,:]
     end
     return onefield
 end
