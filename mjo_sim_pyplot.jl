@@ -24,7 +24,7 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:co
                 ax[draw](
                     params.lon, 
                     params.lat[2:end-1],  
-                    evolfield[j][2:end-1,:],
+                    evolfield[j],
                     vmin=minval,
                     vmax=maxval,
                     cmap="PuOr"
