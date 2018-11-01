@@ -57,11 +57,11 @@ function RK4(initial_state::MJO_State, params::MJO_params, h::Float64, N::Int, e
     tend = deepcopy(initial_state)
     for i = 2 : N+1
         state = RK4_one(state, tend, params, h)
-        if istherenan(state)==true || isthereinf(state)==true
-            print(i)
-            return evol[1:div(i, every)]
-        end
         if rem(i,every)==1
+            if istherenan(state)==true || isthereinf(state)==true
+                print(i)
+                return evol[1:div(i, every)]
+            end
             evol[1+div(i, every)] = state
         end
     end
