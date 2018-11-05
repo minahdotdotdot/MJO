@@ -4,22 +4,28 @@ include("smooth_data.jl")
 
 using PyPlot, Printf
 
-function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:contourf)
+function savecontourmaps(evol::Array{MJO_State,1}, str::String; 
+    draw::Symbol=:contourf
+    aspect::String=false)
     for f in fieldnames(MJO_State)
         evolfield = 1
+        cm = "PuOr"
         if f == :m1 || f ==:n1
             evolfield = elemdiv(getproperty(evol, f), getproperty(evol, :h1))
         elseif f == :m2 || f ==:n2
             evolfield = elemdiv(getproperty(evol, f), getproperty(evol, :h2))
         else
             evolfield = getproperty(evol, f)
+            cc = "BuGn"
         end
         minval = minimum(evolfield);
         maxval = maximum(evolfield);
         for j = 1 : length(evolfield)
             fig, ax = subplots(); 
             fig[:set_size_inches](13,2); 
-            ax[:set_aspect]("equal");
+            if aspect==true
+                ax[:set_aspect]("equal");
+            end
             fig[:colorbar](
                 ax[draw](
                     params.lon, 
@@ -27,7 +33,7 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String; draw::Symbol=:co
                     evolfield[j],
                     vmin=minval,
                     vmax=maxval,
-                    cmap="PuOr"
+                    cmap=cc
                 )
             );
             savefig(
@@ -91,6 +97,7 @@ function f_euler_contour(
             savecontour(state, str*string(1+div(i,every)))
         end
     end
+    return state
 end
 
 function RK4_contour(
@@ -114,6 +121,7 @@ function RK4_contour(
             savecontour(state, str*string(1+div(i,every)))
         end
     end
+    return state
 end
 
 
