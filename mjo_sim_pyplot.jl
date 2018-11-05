@@ -6,7 +6,7 @@ using PyPlot, Printf
 
 function savecontourmaps(evol::Array{MJO_State,1}, str::String; 
     draw::Symbol=:contourf
-    aspect::String=false)
+    aspect::String=true)
     for f in fieldnames(MJO_State)
         evolfield = 1
         cm = "PuOr"
