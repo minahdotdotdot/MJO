@@ -5,8 +5,8 @@ include("smooth_data.jl")
 using PyPlot, Printf
 
 function savecontourmaps(evol::Array{MJO_State,1}, str::String; 
-    draw::Symbol=:contourf
-    aspect::String=true)
+    draw::Symbol=:contourf,
+    aspect::Bool=true)
     for f in fieldnames(MJO_State)
         evolfield = 1
         cm = "PuOr"
@@ -16,7 +16,7 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String;
             evolfield = elemdiv(getproperty(evol, f), getproperty(evol, :h2))
         else
             evolfield = getproperty(evol, f)
-            cc = "BuGn"
+            cm = "BuGn"
         end
         minval = minimum(evolfield);
         maxval = maximum(evolfield);
@@ -33,7 +33,7 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String;
                     evolfield[j],
                     vmin=minval,
                     vmax=maxval,
-                    cmap=cc
+                    cmap=cm
                 )
             );
             savefig(
@@ -49,12 +49,14 @@ end
 @inline function savecontour(state::MJO_State, ii::String; draw::Symbol= :contourf)
     for f in fieldnames(MJO_State)
         evolfield = 1
+        cm = "PuOr"
         if f == :m1 || f ==:n1
             evolfield = getproperty(state,f)[2:end-1, :]./getproperty(state,:h1)[2:end-1, :];
         elseif f ==:m2 || f ==:n2
             evolfield = getproperty(state,f)[2:end-1, :]./getproperty(state,:h2)[2:end-1, :];
         else
             evolfield = getproperty(state,f)[2:end-1, :];
+            cm = "BuGn"
         end
         fig, ax = subplots(); 
         fig[:set_size_inches](13,2); 
@@ -64,7 +66,7 @@ end
                 params.lon, 
                 params.lat[2:end-1],  
                 evolfield,
-                cmap="PuOr"
+                cmap=cm
             )
         );
         savefig(
