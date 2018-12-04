@@ -226,3 +226,46 @@ function EXNL(params::MJO_params, state::MJO_State, exout::MJO_State)
     end
     return exout
 end
+
+function imexstep(state::MJO_State, RHShat::MJO_State_im, out::MJO_State, params::MJO_params, h_time::Float64)
+    # Calculate RHS. 
+    expstate = deepcopy(state)
+    exout(params, state, expstate);
+    AA = params.AA
+    Fr = params.Fr
+
+    # Into Fourier/Cos/Sin Space
+    dcsft(state + h_time * expstate, RHShat)
+    a = h_time^2 * Fr*(kx.^2 + ky.^2);
+    # b = -(1./a + ((1+AA) .+ (AA-1)*a ))
+
+    # Implicit solve
+    y4        = RHShat.m2 + im * kx./ky.*RHShat.n2
+    y5        = RHShat.h2 - im * h_time * kx.*y4;
+    y6        = (RHShat.h1 
+        - im * h_time * kx.*RHShat.m1
+        - h_time * ky * RHShat.n1
+        + Fr/(h_time)*(1 .+a)./ky
+        - (1 .+ 1./a).* y5
+        )
+
+    outhat    = deepcopy(RHShat);
+    outhat.h2 = -1./(1./a + ((1+AA) .+ (AA-1)*a )) .* y6;
+    outhat.n2 = 1/(h_time)* ky./(kx.^2 + ky.^2).*(y6-outhat.h2);
+    outhat.m2 = y4 - im kx./ky.* outhat.n2;
+    outhat.h1 = 1/Fr/h_time./ky .*(
+        RHShat.n2 
+        + AA*h_time*Fr*ky.*y6
+        -y5
+        );
+    outhat.n1 = RHShat.n1 + h_time*Fr*ky.*(y6 + RHShat.n2);
+    outhat.m1 = RHShat.m1 - im * h_time*Fr * kx.*(y6 + RHShat.n2);
+
+    # Into Physical Space
+    idcsft(out, outhat)
+    return out
+end
+
+
+
+
