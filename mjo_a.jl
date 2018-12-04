@@ -70,6 +70,17 @@ struct MJO_State
     new(copy(m1), copy(n1), copy(m2), copy(n2), copy(h1), copy(h2), copy(q))
 end
 
+struct MJO_State_im
+    m1     :: Array{Complex{Float64}, 2}
+    n1     :: Array{Complex{Float64}, 2}
+    m2     :: Array{Complex{Float64}, 2}
+    n2     :: Array{Complex{Float64}, 2}
+    h1     :: Array{Complex{Float64}, 2}
+    h2     :: Array{Complex{Float64}, 2}
+
+    MJO_State_im(m1, n1, m2, n2, h1, h2) =
+    new(copy(m1), copy(n1), copy(m2), copy(n2), copy(h1), copy(h2))
+end
 import Base: +, -, *, /, maximum, minimum, getproperty
 
 function+(A::MJO_State, B::MJO_State)
@@ -230,4 +241,87 @@ function evolfindNaN(evol::Array{MJO_State,1})
     end
 end 
 
+function gen_params(h_time::Float64)
+    return MJO_params(10.0^6, # LL
+                    5000.0,            # HH
+                    5.0,               # UU
+                    0.05,              # QQ
+                    1382400.0,         # T_RC
+                    345600,            # T_Q
+                    9.80665,           #  g
+                    6371000,           # RE
+                    1.0184,            # AA
+                    750.0,             # BB
+                    1.1,               # DD
+                    .058,              # Qs
+                    11.4,              # B
+                    0.25,              # degree
+                    [-20.0, 20.0],     # lat_range
+                    [0.0, 360.0],      # lon_range
+                    17500.0,           # PP
+                    h_time             # time-step length
+                    )
+end
 
+
+
+include("smooth_data.jl")
+
+function genInitSr(stencil::Array{T,2}=zeros(0,0); scheme::String="ex") where T<:Real
+    if scheme =="ex"
+        if stencil==zeros(0,0) # q is random field
+            return MJO_State(
+                zeros(grid_y, grid_x),        #m1
+                zeros(grid_y, grid_x),        #n1
+                zeros(grid_y, grid_x),        #m2
+                zeros(grid_y, grid_x),        #m2
+                ones(grid_y, grid_x),         #h1
+                ones(grid_y, grid_x),         #h2
+                rand(grid_y, grid_x)          #q
+                )
+        else              # q is random field smoothed
+            return MJO_State(
+                zeros(grid_y, grid_x),        #m1
+                zeros(grid_y, grid_x),        #n1
+                zeros(grid_y, grid_x),        #m2
+                zeros(grid_y, grid_x),        #m2
+                ones(grid_y, grid_x),         #h1
+                ones(grid_y, grid_x),         #h2
+                smoother(rand(grid_y,grid_x), stencil) #q
+                )
+       
+        end
+    elseif scheme == "imex"
+        if stencil==zeros(0,0) # q is random field
+            return MJO_State(
+                zeros(grid_y, grid_x),        #m1
+                zeros(grid_y, grid_x),        #n1
+                zeros(grid_y, grid_x),        #m2
+                zeros(grid_y, grid_x),        #m2
+                zeros(grid_y, grid_x),        #eta1
+                zeros(grid_y, grid_x),        #eta2
+                rand(grid_y, grid_x)          #q
+                )
+        else              # q is random field smoothed
+            return MJO_State(
+                zeros(grid_y, grid_x),        #m1
+                zeros(grid_y, grid_x),        #n1
+                zeros(grid_y, grid_x),        #m2
+                zeros(grid_y, grid_x),        #m2
+                zeros(grid_y, grid_x),        #eta1
+                zeros(grid_y, grid_x),        #eta2
+                smoother(rand(grid_y,grid_x), stencil) #q
+                )
+        end
+    elseif scheme =="im"
+        grid_x2 = Int(grid_x/2+1)
+            return MJO_State_im(
+                zeros(Complex{Float64}, grid_y+1, grid_x2),  #m1_hat
+                zeros(Complex{Float64}, grid_y+1, grid_x2),  #n1_hat
+                zeros(Complex{Float64}, grid_y+1, grid_x2),  #m2_hat
+                zeros(Complex{Float64}, grid_y+1, grid_x2),  #m2_hat
+                zeros(Complex{Float64}, grid_y+1, grid_x2),  #eta1_hat
+                zeros(Complex{Float64}, grid_y+1, grid_x2),  #eta2_hat
+            )
+    end
+end

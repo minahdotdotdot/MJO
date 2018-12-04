@@ -1,4 +1,9 @@
 include("mjo_a.jl")
+global h_time = 0.0009
+params=gen_params(h_time);
+global grid_y = length(params.lat);
+ grid_x = length(params.lon);
+IC = genInitSr();
 
 # TOTALLY EXPLICIT SCHEME
 ##Craig and Mack Precipitation
@@ -223,31 +228,3 @@ function dxdt(params::MJO_params, state::MJO_State, out::MJO_State)
     end
     return out
 end
-
-####################################################################################################
-function gen_params(h_time::Float64)
-    return MJO_params(10.0^6, # LL
-                    5000.0,            # HH
-                    5.0,               # UU
-                    0.05,              # QQ
-                    1382400.0,         # T_RC
-                    345600,            # T_Q
-                    9.80665,           #  g
-                    6371000,           # RE
-                    1.0184,            # AA
-                    750.0,             # BB
-                    1.1,               # DD
-                    .058,              # Qs
-                    11.4,              # B
-                    0.25,              # degree
-                    [-20.0, 20.0],     # lat_range
-                    [0.0, 360.0],      # lon_range
-                    17500.0,           # PP
-                    h_time             # time-step length
-                    )
-end
-
-h_time = 0.0009
-params=gen_params(h_time);
-grid_y = length(params.lat);
-grid_x = length(params.lon);
