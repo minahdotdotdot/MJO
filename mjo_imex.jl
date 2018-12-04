@@ -7,12 +7,7 @@ global h_time = 0.0009
 params=gen_params(h_time);
 global grid_y = length(params.lat);
 global grid_x = length(params.lon);
-#IC = genInitSr(scheme="imex");
-xx = pi/180*repeat(range(0,stop=5,length=grid_y),1,grid_x).*repeat(params.lon', grid_y,);
-yy = pi/180*repeat(range(0,stop=5,length=grid_x)',grid_y).*repeat(params.lat, 1,grid_x);
-OO = sin.(xx).*cos.(yy)
-EE = sin.(xx).*sin.(yy)
-IC = MJO_State(OO,EE,OO,OO,EE,OO,rand(grid_y,grid_x));
+IC = genInitSr(scheme="imex");
 IChat = genInitSr(scheme="im");
 
 
@@ -65,6 +60,20 @@ function idcsft(state::MJO_State, statehat::MJO_State_im,
     end
     return state
 end
+#=
+using LinearAlgebra
+xx = pi/180*repeat(range(0,stop=5,length=grid_y),1,grid_x).*repeat(params.lon', grid_y,);
+yy = pi/180*repeat(range(0,stop=5,length=grid_x)',grid_y).*repeat(params.lat, 1,grid_x);
+OO = (sin.(xx)+cos.(xx)).*cos.(yy)
+EE = (sin.(xx)+cos.(xx)).*sin.(yy)
+IC = MJO_State(OO,EE,OO,OO,EE,OO,rand(grid_y,grid_x));
+IChat = genInitSr(scheme="im");
+origIC = deepcopy(IC);
+dcsft(IC, IChat); idcsft(IC, IChat); diffIC = origIC-IC;
+for qq in fieldnames(MJO_State)
+    print(qq, ": ", norm(getproperty(diffIC, qq),2), "\n")
+end
+=#
 
 ###############################################################################
 # EXPLICIT, NONLINEAR TERMS
@@ -74,7 +83,7 @@ end
 #     - exout: tendency of system is written here.
 # h is really eta in the imex scheme.(h_i = 1 + \eta_i)
 
-#=
+
 @inline function P(
         LL::T, UU::T, QQ::T, B::T, Qs::T, q::T, T_Q::T, PP::T) where T<:Real
     return (8.0*LL)/(QQ*86400000.0*UU*PP)*(exp(B*q/Qs)-1.0)
@@ -164,6 +173,7 @@ function EXNL(params::MJO_params, state::MJO_State, exout::MJO_State)
                     state.h1[jj,ii] * .5*delt_x*(h_sum(state.h1,state.h2,jj,iiii+1)-h_sum(state.h1,state.h2,jj,iii-1))
                     )                                                               #=h_1∂x(h_1+h_2)=#
                 - state.m1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
+                )
             #println("m1 done.")
 
             out.n1[jj,ii] = (
@@ -216,4 +226,3 @@ function EXNL(params::MJO_params, state::MJO_State, exout::MJO_State)
     end
     return exout
 end
-=#
