@@ -316,12 +316,12 @@ function genInitSr(stencil::Array{T,2}=zeros(0,0); scheme::String="ex") where T<
     elseif scheme =="im"
         grid_x2 = Int(grid_x/2+1)
             return MJO_State_im(
-                zeros(Complex{Float64}, grid_y+1, grid_x2),  #m1_hat
-                zeros(Complex{Float64}, grid_y+1, grid_x2),  #n1_hat
-                zeros(Complex{Float64}, grid_y+1, grid_x2),  #m2_hat
-                zeros(Complex{Float64}, grid_y+1, grid_x2),  #m2_hat
-                zeros(Complex{Float64}, grid_y+1, grid_x2),  #eta1_hat
-                zeros(Complex{Float64}, grid_y+1, grid_x2),  #eta2_hat
+                zeros(Complex{Float64}, grid_y-1, grid_x2),  #m1_hat
+                zeros(Complex{Float64}, grid_y-1, grid_x2),  #n1_hat
+                zeros(Complex{Float64}, grid_y-1, grid_x2),  #m2_hat
+                zeros(Complex{Float64}, grid_y-1, grid_x2),  #m2_hat
+                zeros(Complex{Float64}, grid_y-1, grid_x2),  #eta1_hat
+                zeros(Complex{Float64}, grid_y-1, grid_x2),  #eta2_hat
             )
     end
 end

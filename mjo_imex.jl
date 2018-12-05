@@ -24,15 +24,15 @@ function dcsft(state::MJO_State, statehat::MJO_State_im,
             # DCT then RFFT
             getproperty(statehat,qq)[:,:] = FFTW.rfft(
                 vcat(
-                FFTW.r2r(getproperty(state,qq), FFTW.REDFT10, 1),
-                zeros(1,grid_x)
-                ), 2)
+                    FFTW.r2r(getproperty(state,qq)[2:end-1,:], FFTW.REDFT10, 1),
+                    zeros(1,grid_x)
+                    ), 2)
         else                        # n1, n2
             # DST then RFFT
             getproperty(statehat,qq)[:,:] = FFTW.rfft(
                 vcat(
                     zeros(1,grid_x),
-                    FFTW.r2r(getproperty(state,qq), FFTW.RODFT10, 1)
+                    FFTW.r2r(getproperty(state,qq)[2:end-1,:], FFTW.RODFT10, 1)#[1:end-1, :]
                     ), 2)
         end
     end
@@ -44,36 +44,39 @@ function idcsft(state::MJO_State, statehat::MJO_State_im,
     for qq in fields
         if qq in fields[[1,3,5,6]]   # m1, m2, h1, h2 
             # iRFFT then iDCT
-            getproperty(state,qq)[:,:] = .5/grid_y*FFTW.r2r(
+            getproperty(state,qq)[2:end-1,:] = .5/(grid_y-2)*FFTW.r2r(
                 real(
                     FFTW.irfft(getproperty(statehat,qq), grid_x, 2)
                     )[1:end-1,:],
                 FFTW.REDFT01, 1)
         else                        # n1, n2
             # iRFFT then iDST
-            getproperty(state,qq)[:,:] = .5/grid_y*FFTW.r2r(
+            getproperty(state,qq)[2:end-1,:] = .5/(grid_y-2)*FFTW.r2r(
                 real(
-                    FFTW.irfft(getproperty(statehat,qq), grid_x, 2)
+                    FFTW.irfft(
+                        getproperty(statehat,qq), grid_x, 2)
                     )[2:end,:],
                 FFTW.RODFT01, 1)
         end
     end
     return state
 end
-#=
+
 using LinearAlgebra
 xx = pi/180*repeat(range(0,stop=5,length=grid_y),1,grid_x).*repeat(params.lon', grid_y,);
 yy = pi/180*repeat(range(0,stop=5,length=grid_x)',grid_y).*repeat(params.lat, 1,grid_x);
-OO = (sin.(xx)+cos.(xx)).*cos.(yy)
-EE = (sin.(xx)+cos.(xx)).*sin.(yy)
+OO = (sin.(144000*xx)+cos.(2000*xx)).*cos.(160*yy)
+EE = (sin.(144000*xx)+cos.(2000*xx)).*sin.(160*yy)
 IC = MJO_State(OO,EE,OO,OO,EE,OO,rand(grid_y,grid_x));
 IChat = genInitSr(scheme="im");
 origIC = deepcopy(IC);
-dcsft(IC, IChat); idcsft(IC, IChat); diffIC = origIC-IC;
+dcsft(IC, IChat); 
+idcsft(IC, IChat); 
+diffIC = origIC-IC;
 for qq in fieldnames(MJO_State)
-    print(qq, ": ", norm(getproperty(diffIC, qq),2), "\n")
+    print(qq, ": ", maximum(abs.(getproperty(diffIC, qq)[2:end-1,:])), "\n")
 end
-=#
+
 
 ###############################################################################
 # EXPLICIT, NONLINEAR TERMS
@@ -227,44 +230,48 @@ function EXNL(params::MJO_params, state::MJO_State, exout::MJO_State)
     return exout
 end
 
+
 function imexstep(state::MJO_State, RHShat::MJO_State_im, out::MJO_State, params::MJO_params, h_time::Float64)
+    AA = params.AA;
+    Fr = params.Fr;
+    #TODO: figure out kx and ky.
+    kx = params.LL/params.RE*repeat(range(0, stop=grid_x/2)', grid_y,1);
+    ky = 9/2 * params.LL/params.RE*repeat(range(0, stop=grid_y-3), 1,grid_x);
+
     # Calculate RHS. 
     expstate = deepcopy(state)
     exout(params, state, expstate);
-    AA = params.AA
-    Fr = params.Fr
+    
 
     # Into Fourier/Cos/Sin Space
     dcsft(state + h_time * expstate, RHShat)
     a = h_time^2 * Fr*(kx.^2 + ky.^2);
-    # b = -(1./a + ((1+AA) .+ (AA-1)*a ))
+    b = AA .+ (AA-1)*a;
 
     # Implicit solve
-    y4        = RHShat.m2 + im * kx./ky.*RHShat.n2
-    y5        = RHShat.h2 - im * h_time * kx.*y4;
-    y6        = (RHShat.h1 
-        - im * h_time * kx.*RHShat.m1
-        - h_time * ky * RHShat.n1
-        + Fr/(h_time)*(1 .+a)./ky
-        - (1 .+ 1./a).* y5
-        )
+    # Applying Lower^{-1}
+    y3 = 1 ./ (1 .+ a) .* (RHShat.h1 - h_time * (
+        im * kx .* RHShat.m1 + ky .* RHShat.n1)
+    );
+    y4 = RHShat.m2 - im * h_time * Fr * kx .* y3;
+    y5 = RHShat.n2 + h_time * Fr * ky .* y3;
+    y6 = RHShat.h2 - h_time * (im * kx .* y4 + ky .* y5);
 
-    outhat    = deepcopy(RHShat);
-    outhat.h2 = -1./(1./a + ((1+AA) .+ (AA-1)*a )) .* y6;
-    outhat.n2 = 1/(h_time)* ky./(kx.^2 + ky.^2).*(y6-outhat.h2);
-    outhat.m2 = y4 - im kx./ky.* outhat.n2;
-    outhat.h1 = 1/Fr/h_time./ky .*(
-        RHShat.n2 
-        + AA*h_time*Fr*ky.*y6
-        -y5
-        );
-    outhat.n1 = RHShat.n1 + h_time*Fr*ky.*(y6 + RHShat.n2);
-    outhat.m1 = RHShat.m1 - im * h_time*Fr * kx.*(y6 + RHShat.n2);
+    # Backward Substitution.
+    outhat = deepcopy(RHShat);
+
+    outhat.h2[:,:] = (1 .+ a) ./ (1 .+ a.*(1 .+ b)) .*y6;
+    outhat.n2[:,:] = y5 .+ h_time * Fr * ky .* b ./(1 .+ a) .* outhat.h2;
+    outhat.m2[:,:] = y4 - im * h_time * Fr * kx .* b ./(1 .+ a) .* outhat.h2;
+    outhat.h1[:,:] = y3 - (1 .- 1 ./(1 .+ a)) .* outhat.h2;
+    outhat.n1[:,:] = RHShat.n1 + h_time * Fr * ky .*(outhat.h1 + outhat.h2);
+    outhat.m1[:,:] = RHShat.m1 - im * h_time * Fr * kx .* (outhat.h1 + outhat.h2);
 
     # Into Physical Space
     idcsft(out, outhat)
     return out
 end
+
 
 
 
