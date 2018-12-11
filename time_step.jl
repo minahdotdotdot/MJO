@@ -123,14 +123,14 @@ end
 
 #using PyPlot
 using Printf
-function testimex_step(h_time::Float64)
+function testimex_step(h_time::Float64, every::Int)
     IC    = genInitSr(scheme="imex");
     IChat = genInitSr(scheme="im");
     state           = deepcopy(IC);     exstate = deepcopy(IC);
     RHShat          = deepcopy(IChat);  outhat  = deepcopy(IChat);
     kx, ky, a, b, c = imex_init(params, h_time);
-    for i = 1 : 10000
-        if rem(i, 100) ==1
+    for i = 1 : Int(ceil((365*24*60*60)/(h_time*2*10^5)))
+        if rem(i, every) ==1
             if istherenan(state)==true || isthereinf(state)==true
                 return i
             else
