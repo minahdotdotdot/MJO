@@ -21,7 +21,7 @@ function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::I
     return evol
 end
 
-@inline function RK4_one(state::MJO_State, tend::MJO_State, params::MJO_params, h::Float64)
+@inline function RK4_one(params::MJO_params, state::MJO_State, tend::MJO_State, h::Float64; scheme2=dxdt::Function)
     #= # Option 1: Creates 4 variables, k1, k2, k3, k4, 
     # 3 scalar multiplications, 4 additions, 6 MJO_State variables at the end[2 initially +1 every stage]
     dxdt(params, state, tend);    
@@ -37,16 +37,16 @@ end
     # Option 2: Create one variable k(quarter storage compared to option 1), update yn at each stage
     # 4 scalar multiplications, 4 additions, 4 MJO_State varibles total [3 initially, +1: k updated.]
     yn = deepcopy(state);
-    dxdt(params, state, tend);
+    scheme2(params, state, tend);
     k = h * tend; #k1
     yn += 1/6*k;
-    dxdt(params, state + .5*k, tend);
+    scheme2(params, state + .5*k, tend);
     k = h * tend; #k2
     yn += 1/3*k;
-    dxdt(params, state + .5*k, tend);
+    scheme2(params, state + .5*k, tend);
     k = h * tend; #k3
     yn += 1/3*k;
-    dxdt(params, state + k, tend);
+    scheme2(params, state + k, tend);
     k = h * tend; #k4
     return yn + (1/6)*k
 end
@@ -70,12 +70,93 @@ function RK4(initial_state::MJO_State, params::MJO_params, h::Float64, N::Int, e
 end
 
 include("mjo_imex.jl")
+function imex_step(
+    state::MJO_State, 
+    exstate::MJO_State,
+    RHShat::MJO_State_im, 
+    outhat::MJO_State_im,
+    params::MJO_params, h_time::Float64,
+    kx::Array{Complex{Float64},2}, ky::Array{Float64,2}, a::Array{Float64,2}, b::Array{Float64,2};
+    scheme1=feEXNL::Function, #OR USE RK4_one
+    scheme2=true, #OR USE EXNL
+    )
+    Fr = params.Fr;
+    # Calculate RHS.
+    exstate = scheme1(params, state, exstate, h_time; scheme2=scheme2);
+    if istherenan(exstate)==true
+        error("explicit RHS contains nan.")
+    end
+    # Into Fourier/Cos/Sin Space
+    dcsft(state + h_time * exstate, RHShat)
+
+    # Implicit solve
+    # Applying Lower^{-1}
+    y3 = 1 ./ a .* (RHShat.h1 - (1/params.Fr) * (
+        kx .* RHShat.m1 + ky .* RHShat.n1)
+    );
+    y4 = RHShat.m2 - kx .* y3;
+    y5 = RHShat.n2 + ky .* y3;
+    y6 = RHShat.h2 - (1/params.Fr)* (kx .* y4 + ky .* y5);
+
+    # Backward Substitution.
+    outhat.h2[:,:] = y6 ./ (a.*(1 .+ (-1 .+(1 ./a)).*(1 .+ b)));
+    outhat.n2[:,:] = y5 .+ ky .* b .*a.* outhat.h2;
+    outhat.m2[:,:] = y4 -  kx .* b .*a .* outhat.h2;
+    outhat.h1[:,:] = y3 - (1 .- a) .* outhat.h2;
+    outhat.n1[:,:] = RHShat.n1 + ky.*(outhat.h1 + outhat.h2);
+    outhat.m1[:,:] = RHShat.m1 - kx.* (outhat.h1 + outhat.h2);
+
+    # Into Physical Space
+    idcsft(state, outhat)
+    if istherenan(state)==true
+        error("implicit scheme produces nan.")
+    end
+    return state
+end
+
+
 IC = genInitSr(scheme="imex");
 IChat = genInitSr(scheme="im");
+using PyPlot
+function testimex_step(n::Int)
+    IC = genInitSr(scheme="imex");
+    IChat = genInitSr(scheme="im");
+    state        = deepcopy(IC);     exstate = deepcopy(IC);
+    RHShat       = deepcopy(IChat);  outhat  = deepcopy(IChat);
+    kx, ky, a, b = imex_init(params, h_time);
+    for i = 1 : n*100
+        print(i, ", ")
+        state = imex_step(
+            state, exstate, RHShat, outhat, 
+            params, h_time/n, kx, ky, a, b,
+            scheme1=RK4_one, scheme2=EXNL
+            );
+        fig, ax = subplots()
+        fig[:set_size_inches](13,2); 
+        ax[:set_aspect]("equal");
+        fig[:colorbar](
+                ax[:pcolormesh](
+                    params.lon, 
+                    params.lat[2:end-1],  
+                    state.m1[2:end-1,:]
+                )
+            );
+        savefig("test"*string(i)*".png",pad_inches=.10, 
+                bbox_inches="tight")
+        close(fig)
+        if istherenan(state)==true
+            return i
+        end
+    end
+    return "All Done!"
+end
+
 
 function imex(
     IC::MJO_State, IChat::MJO_State_im, params::MJO_params, h_time::Float64, 
-    N::Int, every::Int
+    N::Int, every::Int;
+    scheme1=feEXNL::Function, #OR USE RK4_one
+    scheme2=true, #OR USE EXNL
     )
     state        = deepcopy(IC);     exstate = deepcopy(IC);
     RHShat       = deepcopy(IChat);  outhat  = deepcopy(IChat);
@@ -85,14 +166,20 @@ function imex(
     for i = 2 : N+1
         state = imex_step(
             state, exstate, RHShat, outhat, 
-            params, h_time, kx, ky, a, b
+            params, h_time, kx, ky, a, b,
+            scheme1=scheme1, scheme2=scheme2
             );
+        if istherenan(state)==true||isthereinf(state)==true
+            print(i)
+            return evol[1:div(i,every)]
+        end
         if rem(i, every) ==1
-            if istherenan(state)==true||isthereinf(state)==true
+            #=if istherenan(state)==true||isthereinf(state)==true
                 print(i)
                 return evol[1:div(i,every)]
-            end
+            end=#
             evol[1+div(i,every)] = state
+            #end
         end
     end
     return evol

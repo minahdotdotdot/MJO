@@ -205,12 +205,12 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
             ### MOMENTUM
 
             out.m1[jj,ii] = (
-                - div_flux(state.m1, state.n1, state.h1, state.m1, ii, iii, iiii, jj, delt_x, delt_y)
-                + params.Ro*params.y[jj]*state.n1[jj,ii]                             #=+1/Ro*n1=#
+                #- div_flux(state.m1, state.n1, state.h1, state.m1, ii, iii, iiii, jj, delt_x, delt_y)
+                #+ params.Ro*params.y[jj]*state.n1[jj,ii]                             #=+1/Ro*n1=#
                 - params.Fr*(
                     state.h1[jj,ii] * .5*delt_x*(h_sum(state.h1,state.h2,jj,iiii+1)-h_sum(state.h1,state.h2,jj,iii-1))
                     )                                                               #=h_1∂x(h_1+h_2)=#
-                - state.m1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
+                #- state.m1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
                 )
             #println("m1 done.")
 
@@ -262,54 +262,39 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
             #println("q done.")
         end
     end
+    if (true ∈ isnan.(out.m1))==true
+        error("it's m1!!")
+    elseif (true ∈ isnan.(out.n1))==true
+        error("it's n1!!")
+    elseif (true ∈ isnan.(out.m2))==true
+        error("it's m2!!")
+    elseif (true ∈ isnan.(out.n2))==true
+        error("it's n2!!")
+    elseif (true ∈ isnan.(out.h1))==true
+        error("it's h1!!")
+    elseif (true ∈ isnan.(out.h2))==true
+        error("it's h2!!")
+    elseif (true ∈ isnan.(out.q))==true
+        error("it's q!!")
+    end
+
+
     return out
 end
 
+function feEXNL(params::MJO_params, state::MJO_State, tend::MJO_State, h_time::Float64; scheme2=true)
+    EXNL(params, state, tend);
+    return state + h_time*tend
+end
 
-function imex_init(params::MJO_params, h_time::Float64)
+
+@inline function imex_init(params::MJO_params, h_time::Float64)
     grid_x2 = Int(grid_x/2+1);
     kx = params.LL/params.RE * repeat(range(0, stop=grid_x2-1)', grid_y-1,1);
     ky = 9/2 * params.LL/params.RE* repeat(range(0, stop=grid_y-2), 1,grid_x2);
     a = 1 ./(1 .+ h_time^2 * params.Fr*(kx.^2 + ky.^2)); #actually 1/a
     b = params.AA .+ (params.AA-1)*(-1 .+a);
     return (im*h_time*params.Fr)*kx, (h_time*params.Fr)ky, a, b
-end
-
-function imex_step(
-    state::MJO_State, 
-    exstate::MJO_State,
-    RHShat::MJO_State_im, 
-    outhat::MJO_State_im,
-    params::MJO_params, h_time::Float64,
-    kx::Array{Complex{Float64},2}, ky::Array{Float64,2}, a::Array{Float64,2}, b::Array{Float64,2}
-    )
-    Fr = params.Fr;
-    # Calculate RHS.
-    EXNL(params, state, exstate);
-
-    # Into Fourier/Cos/Sin Space
-    dcsft(state + h_time * exstate, RHShat)
-
-    # Implicit solve
-    # Applying Lower^{-1}
-    y3 = 1 ./ a .* (RHShat.h1 - (1/params.Fr) * (
-        kx .* RHShat.m1 + ky .* RHShat.n1)
-    );
-    y4 = RHShat.m2 - kx .* y3;
-    y5 = RHShat.n2 + ky .* y3;
-    y6 = RHShat.h2 - (1/params.Fr)* (kx .* y4 + ky .* y5);
-
-    # Backward Substitution.
-    outhat.h2[:,:] = y6 ./ (a.*(1 .+ (-1 .+(1 ./a)).*(1 .+ b)));
-    outhat.n2[:,:] = y5 .+ ky .* b .*a.* outhat.h2;
-    outhat.m2[:,:] = y4 -  kx .* b .*a .* outhat.h2;
-    outhat.h1[:,:] = y3 - (1 .- a) .* outhat.h2;
-    outhat.n1[:,:] = RHShat.n1 + ky.*(outhat.h1 + outhat.h2);
-    outhat.m1[:,:] = RHShat.m1 - kx.* (outhat.h1 + outhat.h2);
-
-    # Into Physical Space
-    idcsft(state, outhat)
-    return state
 end
 
 
