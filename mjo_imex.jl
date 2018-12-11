@@ -277,8 +277,6 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
     elseif (true ∈ isnan.(out.q))==true
         error("it's q!!")
     end
-
-
     return out
 end
 
@@ -290,11 +288,19 @@ end
 
 @inline function imex_init(params::MJO_params, h_time::Float64)
     grid_x2 = Int(grid_x/2+1);
-    kx = params.LL/params.RE * repeat(range(0, stop=grid_x2-1)', grid_y-1,1);
-    ky = 9/2 * params.LL/params.RE* repeat(range(0, stop=grid_y-2), 1,grid_x2);
+    kx = (params.LL/params.RE )* 
+    repeat(range(0, stop=grid_x2-1)', grid_y-1,1);
+    ky = (9/2 * params.LL/params.RE)*
+    repeat(range(0, stop=grid_y-2), 1,grid_x2);
     a = 1 ./(1 .+ h_time^2 * params.Fr*(kx.^2 + ky.^2)); #actually 1/a
-    b = params.AA .+ (params.AA-1)*(-1 .+a);
-    return (im*h_time*params.Fr)*kx, (h_time*params.Fr)ky, a, b
+    b = params.AA .+ (params.AA-1)*(-1 .+ 1 ./a);
+    c = 1 ./(
+        a.*(1 .+ 
+        (-1 .+(1 ./a)).*(1 .+ b))
+        )
+    kx = (im*h_time*params.Fr) * kx;
+    ky = (h_time*params.Fr) * ky
+    return kx, ky, a, b, c
 end
 
 
