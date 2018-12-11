@@ -69,5 +69,32 @@ function RK4(initial_state::MJO_State, params::MJO_params, h::Float64, N::Int, e
     return evol
 end
 
+include("mjo_imex.jl")
+IC = genInitSr(scheme="imex");
+IChat = genInitSr(scheme="im");
 
-## TODO: RK4? implicit schemes?
+function imex(
+    IC::MJO_State, IChat::MJO_State_im, params::MJO_params, h_time::Float64, 
+    N::Int, every::Int
+    )
+    state        = deepcopy(IC);     exstate = deepcopy(IC);
+    RHShat       = deepcopy(IChat);  outhat  = deepcopy(IChat);
+    kx, ky, a, b = imex_init(params, h_time);
+    evol         = Array{MJO_State,1}(undef, div(N, every)+1)
+    evol[1]      = IC;
+    for i = 2 : N+1
+        state = imex_step(
+            state, exstate, RHShat, outhat, 
+            params, h_time, kx, ky, a, b
+            );
+        if rem(i, every) ==1
+            if istherenan(state)==true||isthereinf(state)==true
+                print(i)
+                return evol[1:div(i,every)]
+            end
+            evol[1+div(i,every)] = state
+        end
+    end
+    return evol
+end
+

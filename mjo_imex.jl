@@ -3,14 +3,10 @@
 # Copyright 2018. Not for public distribution.
 
 include("mjo_a.jl")
-global h_time = 0.0009
+global h_time = 0.0009 # = 3min
 params=gen_params(h_time);
 global grid_y = length(params.lat);
 global grid_x = length(params.lon);
-IC = genInitSr(scheme="imex");
-IChat = genInitSr(scheme="im");
-
-
 ###############################################################################
 # DCT/DST & FFT and their inverses
 using FFTW
@@ -63,6 +59,7 @@ function idcsft(state::MJO_State, statehat::MJO_State_im,
 end
 
 using LinearAlgebra
+#=
 xx = pi/180*repeat(range(0,stop=5,length=grid_y),1,grid_x).*repeat(params.lon', grid_y,);
 yy = pi/180*repeat(range(0,stop=5,length=grid_x)',grid_y).*repeat(params.lat, 1,grid_x);
 OO = (sin.(144000*xx)+cos.(2000*xx)).*cos.(160*yy)
@@ -76,6 +73,7 @@ diffIC = origIC-IC;
 for qq in fieldnames(MJO_State)
     print(qq, ": ", maximum(abs.(getproperty(diffIC, qq)[2:end-1,:])), "\n")
 end
+=#
 
 
 ###############################################################################
@@ -119,6 +117,43 @@ end
         )
 end 
 
+@inline function set_ghost_cells(state, ii)
+    #= state.h1[1,ii]   = 2.0*state.h1[2,ii] - state.h1[3,ii]
+    state.h2[1,ii]   = 2.0*state.h2[2,ii] - state.h2[3,ii]
+    state.h1[end,ii] = 2.0*state.h1[end-1,ii] - state.h1[end-2,ii]
+    state.h2[end,ii] = 2.0*state.h2[end-1,ii] - state.h2[end-2,ii]
+
+    state.n1[1,ii]   = state.h1[1,ii] / state.h1[2,ii] * state.n1[2,ii]
+    state.n2[1,ii]   = state.h2[1,ii] / state.h2[2,ii] * state.n2[2,ii]
+    state.n1[end,ii] = state.h1[end,ii] / state.h1[end-1,ii] * state.n1[end-1,ii]
+    state.n2[end,ii] = state.h2[end,ii] / state.h2[end-1,ii] * state.n2[end-1,ii] =#
+
+    #=Ghost cells impose meridional boundary coniditons located at:
+    j=1.5 = "-20 deg" & j=end-.5 = "20 deg" =#
+
+    #= n_i(boundary)=0 =#
+    state.n1[1,ii]   = -state.n1[2,ii]
+    state.n1[end,ii] = -state.n1[end-1,ii]
+    state.n2[1,ii]   = -state.n2[2,ii]
+    state.n2[end,ii] = -state.n2[end-1,ii]
+
+    #= ∂yh_i(boundary)=0 =#
+    state.h1[1,ii]   = state.h1[2,ii]
+    state.h1[end,ii] = state.h1[end-1,ii]
+    state.h2[1,ii]   = state.h2[2,ii]
+    state.h2[end,ii] = state.h2[end-1,ii]
+
+    #= ∂ym_i(boundary)=0 =#
+    state.m1[1,ii]   = state.m1[2,ii]
+    state.m1[end,ii] = state.m1[end-1,ii]
+    state.m2[1,ii]   = state.m2[2,ii]
+    state.m2[end,ii] = state.m2[end-1,ii]
+
+    #= ∂yq(boundary)=0 =#
+    state.q[1,ii]   = state.q[2,ii]
+    state.q[end,ii] = state.q[end-1,ii]
+end
+
 @inline function h_sum(h1, h2, jj, ii)
     return h1[jj,ii] + h2[jj,ii]
 end
@@ -127,7 +162,7 @@ end
     return h1[jj,ii] + a*h2[jj,ii]
 end
 
-function EXNL(params::MJO_params, state::MJO_State, exout::MJO_State)
+function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
     delt_x = params.delt_x        :: Float64
     delt_y = params.delt_y        :: Float64
     LL     = params.LL            :: Float64
@@ -222,55 +257,61 @@ function EXNL(params::MJO_params, state::MJO_State, exout::MJO_State)
             out.q[jj,ii] = (
                 - div_flux(state.m1, state.n1, state.h1, state.q, ii, iii, iiii, jj, delt_x, delt_y)
                 +(-1.0+Qs./(DD*state.q[jj,ii]))*P(LL,UU,QQ,B,Qs,state.q[jj,ii], T_Q,PP) #=\hat{P}(Q)=#
-                + KK*diffusion(state.q, ii, iii, iiii, jj, delt_x, delt_y)
+                #+ KK*diffusion(state.q, ii, iii, iiii, jj, delt_x, delt_y)
                 )
             #println("q done.")
         end
     end
-    return exout
+    return out
 end
 
 
-function imexstep(state::MJO_State, RHShat::MJO_State_im, out::MJO_State, params::MJO_params, h_time::Float64)
-    AA = params.AA;
-    Fr = params.Fr;
-    #TODO: figure out kx and ky.
-    kx = params.LL/params.RE*repeat(range(0, stop=grid_x/2)', grid_y,1);
-    ky = 9/2 * params.LL/params.RE*repeat(range(0, stop=grid_y-3), 1,grid_x);
+function imex_init(params::MJO_params, h_time::Float64)
+    grid_x2 = Int(grid_x/2+1);
+    kx = params.LL/params.RE * repeat(range(0, stop=grid_x2-1)', grid_y-1,1);
+    ky = 9/2 * params.LL/params.RE* repeat(range(0, stop=grid_y-2), 1,grid_x2);
+    a = 1 ./(1 .+ h_time^2 * params.Fr*(kx.^2 + ky.^2)); #actually 1/a
+    b = params.AA .+ (params.AA-1)*(-1 .+a);
+    return (im*h_time*params.Fr)*kx, (h_time*params.Fr)ky, a, b
+end
 
-    # Calculate RHS. 
-    expstate = deepcopy(state)
-    exout(params, state, expstate);
-    
+function imex_step(
+    state::MJO_State, 
+    exstate::MJO_State,
+    RHShat::MJO_State_im, 
+    outhat::MJO_State_im,
+    params::MJO_params, h_time::Float64,
+    kx::Array{Complex{Float64},2}, ky::Array{Float64,2}, a::Array{Float64,2}, b::Array{Float64,2}
+    )
+    Fr = params.Fr;
+    # Calculate RHS.
+    EXNL(params, state, exstate);
 
     # Into Fourier/Cos/Sin Space
-    dcsft(state + h_time * expstate, RHShat)
-    a = h_time^2 * Fr*(kx.^2 + ky.^2);
-    b = AA .+ (AA-1)*a;
+    dcsft(state + h_time * exstate, RHShat)
 
     # Implicit solve
     # Applying Lower^{-1}
-    y3 = 1 ./ (1 .+ a) .* (RHShat.h1 - h_time * (
-        im * kx .* RHShat.m1 + ky .* RHShat.n1)
+    y3 = 1 ./ a .* (RHShat.h1 - (1/params.Fr) * (
+        kx .* RHShat.m1 + ky .* RHShat.n1)
     );
-    y4 = RHShat.m2 - im * h_time * Fr * kx .* y3;
-    y5 = RHShat.n2 + h_time * Fr * ky .* y3;
-    y6 = RHShat.h2 - h_time * (im * kx .* y4 + ky .* y5);
+    y4 = RHShat.m2 - kx .* y3;
+    y5 = RHShat.n2 + ky .* y3;
+    y6 = RHShat.h2 - (1/params.Fr)* (kx .* y4 + ky .* y5);
 
     # Backward Substitution.
-    outhat = deepcopy(RHShat);
-
-    outhat.h2[:,:] = (1 .+ a) ./ (1 .+ a.*(1 .+ b)) .*y6;
-    outhat.n2[:,:] = y5 .+ h_time * Fr * ky .* b ./(1 .+ a) .* outhat.h2;
-    outhat.m2[:,:] = y4 - im * h_time * Fr * kx .* b ./(1 .+ a) .* outhat.h2;
-    outhat.h1[:,:] = y3 - (1 .- 1 ./(1 .+ a)) .* outhat.h2;
-    outhat.n1[:,:] = RHShat.n1 + h_time * Fr * ky .*(outhat.h1 + outhat.h2);
-    outhat.m1[:,:] = RHShat.m1 - im * h_time * Fr * kx .* (outhat.h1 + outhat.h2);
+    outhat.h2[:,:] = y6 ./ (a.*(1 .+ (-1 .+(1 ./a)).*(1 .+ b)));
+    outhat.n2[:,:] = y5 .+ ky .* b .*a.* outhat.h2;
+    outhat.m2[:,:] = y4 -  kx .* b .*a .* outhat.h2;
+    outhat.h1[:,:] = y3 - (1 .- a) .* outhat.h2;
+    outhat.n1[:,:] = RHShat.n1 + ky.*(outhat.h1 + outhat.h2);
+    outhat.m1[:,:] = RHShat.m1 - kx.* (outhat.h1 + outhat.h2);
 
     # Into Physical Space
-    idcsft(out, outhat)
-    return out
+    idcsft(state, outhat)
+    return state
 end
+
 
 
 
