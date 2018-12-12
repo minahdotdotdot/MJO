@@ -262,21 +262,6 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
             #println("q done.")
         end
     end
-    if (true ∈ isnan.(out.m1))==true
-        error("it's m1!!")
-    elseif (true ∈ isnan.(out.n1))==true
-        error("it's n1!!")
-    elseif (true ∈ isnan.(out.m2))==true
-        error("it's m2!!")
-    elseif (true ∈ isnan.(out.n2))==true
-        error("it's n2!!")
-    elseif (true ∈ isnan.(out.h1))==true
-        error("it's h1!!")
-    elseif (true ∈ isnan.(out.h2))==true
-        error("it's h2!!")
-    elseif (true ∈ isnan.(out.q))==true
-        error("it's q!!")
-    end
     return out
 end
 
@@ -288,16 +273,16 @@ end
 
 @inline function imex_init(params::MJO_params, h_time::Float64)
     grid_x2 = Int(grid_x/2+1);
-    kx = (params.LL/params.RE )* 
-    repeat(range(0, stop=grid_x2-1)', grid_y-1,1);
-    ky = (9/2 * params.LL/params.RE)*
-    repeat(range(0, stop=grid_y-2), 1,grid_x2);
-    a = 1 ./(1 .+ h_time^2 * params.Fr*(kx.^2 + ky.^2)); #actually 1/a
-    b = params.AA .+ (params.AA-1)*(-1 .+ 1 ./a);
-    c = 1 ./(
-        a.*(1 .+ 
-        (-1 .+(1 ./a)).*(1 .+ b))
-        )
+    kx = ((params.LL/params.RE )* 
+    repeat(range(0, stop=grid_x2-1)', grid_y-1,1));
+    ky = ((9/2 * params.LL/params.RE)*
+    repeat(range(0, stop=grid_y-2), 1,grid_x2));
+
+    aa = (h_time^2 * params.Fr)*(kx.^2 + ky.^2);
+
+    a = 1 ./(1 .+ aa); #actually 1/(1+a)
+    b = params.AA .+ (params.AA-1)*aa;
+    c = (1 .+aa) ./ (1 .+ aa .*(1 .+ b));
     kx = (im*h_time*params.Fr) * kx;
     ky = (h_time*params.Fr) * ky
     return kx, ky, a, b, c

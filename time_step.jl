@@ -90,9 +90,6 @@ function imex_step(
     Fr = params.Fr;
     # Calculate RHS.
     exstate = scheme1(params, state, exstate, h_time; scheme2=scheme2);
-    if istherenan(exstate)==true
-        error("explicit RHS contains nan.")
-    end
     # Into Fourier/Cos/Sin Space
     dcsft(exstate, RHShat)
 
@@ -115,9 +112,6 @@ function imex_step(
 
     # Into Physical Space
     idcsft(state, outhat)
-    if istherenan(state)==true
-        error("implicit scheme produces nan.")
-    end
     return outhat, state
 end
 
@@ -131,14 +125,15 @@ function testimex_step(h_time::Float64, every::Int)
     kx, ky, a, b, c = imex_init(params, h_time);
     for i = 1 : Int(ceil((365*24*60*60)/(h_time*2*10^5)))
         if rem(i, every) ==1
-            if istherenan(state)==true || isthereinf(state)==true
-                return state
+            if istherenan(outhat)==true || isthereinf(outhat)==true
+                return i, outhat
+            elseif istherenan(state)==true || isthereinf(state)==true
+                return i, state
             else
                 @printf("i= %3d : max = %4.2e, maxhat = %4.2e\n", 
                     i, maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
             end
         end
-        #print(i, ": ", maximum(norm.(state.m1)))
         outhat, state = imex_step(
             state, exstate, RHShat, outhat, 
             params, h_time, kx, ky, a, b, c
