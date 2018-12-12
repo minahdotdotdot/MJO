@@ -132,7 +132,7 @@ function testimex_step(h_time::Float64, every::Int)
     for i = 1 : Int(ceil((365*24*60*60)/(h_time*2*10^5)))
         if rem(i, every) ==1
             if istherenan(state)==true || isthereinf(state)==true
-                return i
+                return state
             else
                 @printf("i= %3d : max = %4.2e, maxhat = %4.2e\n", 
                     i, maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
@@ -158,7 +158,7 @@ function testimex_step(h_time::Float64, every::Int)
                 bbox_inches="tight")
         close(fig)=#
     end
-    return "All Done!"
+    return outhat, state
 end
 
 
