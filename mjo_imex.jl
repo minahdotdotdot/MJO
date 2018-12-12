@@ -117,6 +117,14 @@ end
         )
 end 
 
+@inline function diffusion(q::Array{T,2}, ii::Int64, iii::Int64, iiii::Int64, jj::Int64, 
+    delt_x::T, delt_y::T) where T <:Real
+    return (
+        delt_x^2*(q[jj,iiii+1]-2*q[jj,ii]+q[jj,iii-1])
+        +delt_y^2*(q[jj+1,ii]-2*q[jj,ii]+q[jj-1,ii])
+        )
+end
+
 @inline function set_ghost_cells(state, ii)
     #= state.h1[1,ii]   = 2.0*state.h1[2,ii] - state.h1[3,ii]
     state.h2[1,ii]   = 2.0*state.h2[2,ii] - state.h2[3,ii]
@@ -257,7 +265,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
             out.q[jj,ii] = (
                 - div_flux(state.m1, state.n1, state.h1, state.q, ii, iii, iiii, jj, delt_x, delt_y)
                 +(-1.0+Qs./(DD*state.q[jj,ii]))*P(LL,UU,QQ,B,Qs,state.q[jj,ii], T_Q,PP) #=\hat{P}(Q)=#
-                #+ KK*diffusion(state.q, ii, iii, iiii, jj, delt_x, delt_y)
+                + KK*diffusion(state.q, ii, iii, iiii, jj, delt_x, delt_y)
                 )
             #println("q done.")
         end
@@ -283,6 +291,7 @@ end
     a = 1 ./(1 .+ aa); #actually 1/(1+a)
     b = params.AA .+ (params.AA-1)*aa;
     c = (1 .+aa) ./ (1 .+ aa .*(1 .+ b));
+
     kx = (im*h_time*params.Fr) * kx;
     ky = (h_time*params.Fr) * ky
     return kx, ky, a, b, c
