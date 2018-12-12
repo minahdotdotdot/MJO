@@ -146,8 +146,18 @@ function istherenan(A::Array{T,2}) where T<:Real
 end
 
 function istherenan(A::MJO_State)
-    for f in fieldnames(MJO_State)[5:7]
+    for f in fieldnames(MJO_State)
         if istherenan(getproperty(A, f))==true
+            return true
+        else
+            return false
+        end
+    end
+end
+
+function istherenan(A::MJO_State_im)
+    for f in fieldnames(MJO_State_im)
+        if istherenan(imag(getproperty(A, f)))==true || istherenan(real(getproperty(A, f)))==true
             return true
         else
             return false
@@ -163,8 +173,18 @@ function isthereinf(A::Array{T,2}) where T<:Real
 end
 
 function isthereinf(A::MJO_State)
-    for f in fieldnames(MJO_State)[5:7]
+    for f in fieldnames(MJO_State)
         if isthereinf(getproperty(A, f))==true
+            return true
+        else
+            return false
+        end
+    end
+end
+
+function isthereinf(A::MJO_State_im)
+    for f in fieldnames(MJO_State_im)
+        if isthereinf(imag(getproperty(A, f)))==true || isthereinf(real(getproperty(A, f)))==true
             return true
         else
             return false
