@@ -52,3 +52,8 @@ Since delt_x is fixed for our problem, ``gen_params(h_time)`` creates in instanc
 - f_euler(IC::MJO_State, params::MJO_params, h_time, N, every, str::String) returns ::Array{MJO_State,1} of every ``every`` timesteps. 
 - savecontourmaps(evol::Array{MJO_State,1}) saves png's to ../movies/f for f in  [:m1, :n1, :m2, :n2, :h1, :h2, :q]. This has the advantage of scaling the color bar across the time evolution.
 -f_euler_contour saves every ``every`` timesteps as a png. This does not have uniform scaling of the colorbar across time.
+
+f_euler: 0.00001 = 2 sec
+RK4: 0.0009 = 3min
+imex: ???
+
