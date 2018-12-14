@@ -115,15 +115,23 @@ function imex_step(
     return outhat, state
 end
 
-#using PyPlot
+include("mjo_sim_pyplot.jl")
+using PyPlot
 using Printf
-function testimex_step(h_time::Float64, every::Int)
+function testimex_step(h_time::Float64, every::Int, name::String)
+    params = gen_params(h_time);
     IC    = genInitSr(scheme="imex");
     IChat = genInitSr(scheme="im");
     state           = deepcopy(IC);     exstate = deepcopy(IC);
     RHShat          = deepcopy(IChat);  outhat  = deepcopy(IChat);
     kx, ky, a, b, c = imex_init(params, h_time);
-    for i = 1 : Int(ceil((365*24*60*60)/(h_time*2*10^5)))
+    savecontour(state, name*string(1))
+    for i = 2 : Int(ceil((365*24*60*60)/(h_time*2*10^5))) # one year's time
+        outhat, state = imex_step(
+            state, exstate, RHShat, outhat, 
+            params, h_time, kx, ky, a, b, c
+            #, scheme1=RK4_one, scheme2=EXNL
+            );
         if rem(i, every) ==1
             if istherenan(outhat)==true || isthereinf(outhat)==true
                 return i, outhat
@@ -133,25 +141,10 @@ function testimex_step(h_time::Float64, every::Int)
                 @printf("i= %3d : max = %4.2e, maxhat = %4.2e\n", 
                     i, maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
             end
+            savecontour(state, name*string(i), draw=:pcolormesh)#1+div(i,every)))
         end
-        outhat, state = imex_step(
-            state, exstate, RHShat, outhat, 
-            params, h_time, kx, ky, a, b, c
-            #, scheme1=RK4_one, scheme2=EXNL
-            );
-        #=fig, ax = subplots()
-        fig[:set_size_inches](13,2); 
-        ax[:set_aspect]("equal");
-        fig[:colorbar](
-                ax[:pcolormesh](
-                    params.lon, 
-                    params.lat[2:end-1],  
-                    state.m1[2:end-1,:]
-                )
-            );
-        savefig("test"*string(i)*".png",pad_inches=.10, 
-                bbox_inches="tight")
-        close(fig)=#
+        
+        close(fig)
     end
     return outhat, state
 end

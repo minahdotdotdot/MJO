@@ -127,30 +127,7 @@ function RK4_contour(
 end
 
 
-function genInitSr(stencil::Array{T,2}=zeros(0,0)) where T<:Real
-    if stencil==zeros(0,0) # q is random field
-        return MJO_State(
-            zeros(grid_y, grid_x),        #m1
-            zeros(grid_y, grid_x),        #n1
-            zeros(grid_y, grid_x),        #m2
-            zeros(grid_y, grid_x),        #m2
-            ones(grid_y, grid_x),         #h1
-            ones(grid_y, grid_x),         #h2
-            rand(grid_y, grid_x)          #q
-            )
-    else              # q is random field smoothed
-        return MJO_State(
-            zeros(grid_y, grid_x),        #m1
-            zeros(grid_y, grid_x),        #n1
-            zeros(grid_y, grid_x),        #m2
-            zeros(grid_y, grid_x),        #m2
-            ones(grid_y, grid_x),         #h1
-            ones(grid_y, grid_x),         #h2
-            smoother(rand(grid_y,grid_x), stencil) #q
-            )
-   
-    end
-end
+
 
 
 

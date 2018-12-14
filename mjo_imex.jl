@@ -218,7 +218,8 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
                 - params.Fr*(
                     state.h1[jj,ii] * .5*delt_x*(h_sum(state.h1,state.h2,jj,iiii+1)-h_sum(state.h1,state.h2,jj,iii-1))
                     )                                                               #=h_1∂x(h_1+h_2)=#
-                #- state.m1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
+                - state.m1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
+                + KK*diffusion(state.m1, ii, iii, iiii, jj, delt_x, delt_y)
                 )
             #println("m1 done.")
 
@@ -229,6 +230,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
                     state.h1[jj,ii] * .5*delt_y*(h_sum(state.h1,state.h2,jj+1,ii)-h_sum(state.h1,state.h2,jj-1,ii))
                     )                                                               #=h_1∂y(h_1+h_2)=#
                 - state.n1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
+                + KK*diffusion(state.n1, ii, iii, iiii, jj, delt_x, delt_y)
                 ) 
             #println("n1 done.")
 
@@ -239,6 +241,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
                     state.h2[jj,ii] * .5*delt_x*(h_sum_a(state.h1,state.h2,AA,jj,iiii+1) - h_sum_a(state.h1,state.h2,AA,jj,iii-1))
                     )                                                               #=h_1∂x(h_1+\alpha* h_2)=#
                 + state.m1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
+                + KK*diffusion(state.m2, ii, iii, iiii, jj, delt_x, delt_y)
                 )
             #println("m2 done.")
 
@@ -250,15 +253,20 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
                     state.h2[jj,ii] * .5*delt_y*(h_sum_a(state.h1,state.h2,AA,jj+1,ii)-h_sum_a(state.h1,state.h2,AA,jj-1,ii))
                     )                                                               #=h_1∂y(h_1+\alpha*h_2)=#
                 + state.n1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
+                + KK*diffusion(state.n2, ii, iii, iiii, jj, delt_x, delt_y)
         )
             #println("n2 done.")
 
             ### MASS
 
-            out.h1[jj,ii] = - value_P_RC
+            out.h1[jj,ii] = (- value_P_RC
+                + KK*diffusion(state.h1, ii, iii, iiii, jj, delt_x, delt_y)
+                )
             #println("h1 done.")
 
-            out.h2[jj,ii] = + value_P_RC
+            out.h2[jj,ii] = (+ value_P_RC
+                + KK*diffusion(state.h2, ii, iii, iiii, jj, delt_x, delt_y)
+                )
             #println("h2 done.")
 
             ### MOISTURE
