@@ -1,5 +1,4 @@
 include("mjo_a.jl");
-include("time_step.jl")
 include("smooth_data.jl")
 
 using PyPlot, Printf
@@ -76,54 +75,6 @@ end
         )
         close(fig)
     end
-end
-
-function f_euler_contour(
-    initial_state:: MJO_State, 
-    params::MJO_params, 
-    h::Float64, 
-    N::Int, 
-    every::Int,
-    str::String
-    )
-    tend = deepcopy(initial_state)
-    state = deepcopy(initial_state)
-    savecontour(initial_state, str*"1")
-    for i = 2 : N+1
-        dxdt(params, state, tend);
-        if istherenan(tend)==true || isthereinf(tend)==true
-            error("We've got a NaN at "*string(i)*"!!! \n")
-        end
-        state = state + h * tend;
-        if rem(i,every)==1
-            savecontour(state, str*string(1+div(i,every)))
-        end
-    end
-    return state
-end
-
-function RK4_contour(
-    initial_state:: MJO_State, 
-    params::MJO_params, 
-    h::Float64, 
-    N::Int, 
-    every::Int,
-    str::String
-    )
-    tend = deepcopy(initial_state)
-    state = deepcopy(initial_state)
-    savecontour(initial_state, str*"1")
-    for i = 2 : N+1
-        RK4_one(state, tend, params, h)
-        if istherenan(tend)==true || isthereinf(tend)==true
-            error("We've got a NaN at "*string(i)*"!!! \n")
-        end
-        state = state + h * tend;
-        if rem(i,every)==1
-            savecontour(state, str*string(1+div(i,every)))
-        end
-    end
-    return state
 end
 
 

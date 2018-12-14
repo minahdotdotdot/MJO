@@ -141,7 +141,8 @@ function testimex_step(h_time::Float64, every::Int, name::String)
                 @printf("i= %3d : max = %4.2e, maxhat = %4.2e\n", 
                     i, maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
             end
-            savecontour(state, name*string(i), draw=:pcolormesh)#1+div(i,every)))
+            savecontour(state, name*string(i), draw=:pcolormesh
+                )#1+div(i,every)))
         end
         
         close(fig)
@@ -182,4 +183,55 @@ function imex(
     end
     return evol
 end
+
+
+
+function f_euler_contour(
+    initial_state:: MJO_State, 
+    params::MJO_params, 
+    h::Float64, 
+    N::Int, 
+    every::Int,
+    str::String
+    )
+    tend = deepcopy(initial_state)
+    state = deepcopy(initial_state)
+    savecontour(initial_state, str*"1")
+    for i = 2 : N+1
+        dxdt(params, state, tend);
+        if istherenan(tend)==true || isthereinf(tend)==true
+            error("We've got a NaN at "*string(i)*"!!! \n")
+        end
+        state = state + h * tend;
+        if rem(i,every)==1
+            savecontour(state, str*string(1+div(i,every)))
+        end
+    end
+    return state
+end
+
+function RK4_contour(
+    initial_state:: MJO_State, 
+    params::MJO_params, 
+    h::Float64, 
+    N::Int, 
+    every::Int,
+    str::String
+    )
+    tend = deepcopy(initial_state)
+    state = deepcopy(initial_state)
+    savecontour(initial_state, str*"1")
+    for i = 2 : N+1
+        RK4_one(state, tend, params, h)
+        if istherenan(tend)==true || isthereinf(tend)==true
+            error("We've got a NaN at "*string(i)*"!!! \n")
+        end
+        state = state + h * tend;
+        if rem(i,every)==1
+            savecontour(state, str*string(1+div(i,every)))
+        end
+    end
+    return state
+end
+
 
