@@ -115,8 +115,8 @@ function imex_step(
     return outhat, state
 end
 
-include("mjo_sim_pyplot.jl")
-using PyPlot
+#include("mjo_sim_pyplot.jl")
+#using PyPlot
 using Printf
 function testimex_step(h_time::Float64, every::Int, name::String)
     params = gen_params(h_time);
@@ -125,12 +125,14 @@ function testimex_step(h_time::Float64, every::Int, name::String)
     state           = deepcopy(IC);     exstate = deepcopy(IC);
     RHShat          = deepcopy(IChat);  outhat  = deepcopy(IChat);
     kx, ky, a, b, c = imex_init(params, h_time);
-    savecontour(state, name*string(1))
+    #savecontour(state, name*string(1))
+    @printf("i=  1 : max = %4.2e, maxhat = %4.2e\n", 
+        maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
     for i = 2 : Int(ceil((365*24*60*60)/(h_time*2*10^5))) # one year's time
         outhat, state = imex_step(
             state, exstate, RHShat, outhat, 
             params, h_time, kx, ky, a, b, c
-            #, scheme1=RK4_one, scheme2=EXNL
+            , scheme1=RK4_one, scheme2=EXNL
             );
         if rem(i, every) ==1
             if istherenan(outhat)==true || isthereinf(outhat)==true
@@ -141,11 +143,8 @@ function testimex_step(h_time::Float64, every::Int, name::String)
                 @printf("i= %3d : max = %4.2e, maxhat = %4.2e\n", 
                     i, maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
             end
-            savecontour(state, name*string(i), draw=:pcolormesh
-                )#1+div(i,every)))
+            #savecontour(state, name*string(i), draw=:pcolormesh)#1+div(i,every)))
         end
-        
-        close(fig)
     end
     return outhat, state
 end
