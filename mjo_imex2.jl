@@ -304,3 +304,22 @@ end
     ky = (h_time*params.Fr) * ky
     return kx, ky, ak, b, d, f, g
 end
+
+function justdiffusion(state::MJO_State, statehat::MJO_State_im, h_time::Float64)
+    kx = ((params.LL/params.RE )* 
+    repeat(range(0, stop=grid_x2-1)', grid_y-1,1));
+    ky = ((9/2 * params.LL/params.RE)*
+    repeat(range(0, stop=grid_y-2), 1,grid_x2));
+    KK = 0.0001 * (params.deg*pi*params.RE)^2/(180.0*params.LL)^2;
+    a = 1 ./(1 .+ KK*(kx.^2 + ky.^2))
+    statehat = dcsft(state, statehat)
+    for f in fieldnames(MJO_State_im)
+        getproperty(statehat, f)[:,:] = a .*getproperty(statehat, f)[:,:]
+    end
+    state = idcsft(state, statehat)
+    return state 
+end
+
+
+
+
