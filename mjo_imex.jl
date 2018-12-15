@@ -294,15 +294,15 @@ end
     ky = ((9/2 * params.LL/params.RE)*
     repeat(range(0, stop=grid_y-2), 1,grid_x2));
 
-    aa = (h_time^2 * params.Fr)*(kx.^2 + ky.^2);
+    a = (h_time^2 * params.Fr)*(kx.^2 + ky.^2);
 
-    a = 1 ./(1 .+ aa); #actually 1/(1+a)
-    b = params.AA .+ (params.AA-1)*aa;
-    c = (1 .+aa) ./ (1 .+ aa .*(1 .+ b));
+    aa = 1 ./(1 .+ a); #actually 1/(1+a)
+    b = (params.AA .+ (params.AA-1)*a) .* aa;
+    c = (1 .+a) ./ (1 .+ a .*(1 .+ b));
 
     kx = (im*h_time*params.Fr) * kx;
     ky = (h_time*params.Fr) * ky
-    return kx, ky, a, b, c
+    return kx, ky, aa, b, c
 end
 
 

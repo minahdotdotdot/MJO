@@ -1,6 +1,7 @@
 include("smooth_data.jl")
 include("mjo_a.jl")
 include("mjo_ex.jl")
+include("mjo_sim_pyplot.jl")
 function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::Int, every::Int)
     tend = deepcopy(initial_state)
     evol = Array{MJO_State,1}(undef,div(N, every)+1)
@@ -87,7 +88,6 @@ function imex_step(
     scheme1=feEXNL::Function, # Default is f_euler OR USE RK4_one
     scheme2=true,             # Default is f_euler OR USE EXNL
     )
-    Fr = params.Fr;
     # Calculate RHS.
     exstate = scheme1(params, state, exstate, h_time; scheme2=scheme2);
     # Into Fourier/Cos/Sin Space
@@ -104,20 +104,17 @@ function imex_step(
 
     # Backward Substitution.
     outhat.h2[:,:] = c .*y6;
-    outhat.n2[:,:] = y5 .+ ky .* b .*a.* outhat.h2;
-    outhat.m2[:,:] = y4 -  kx .* b .*a .* outhat.h2;
+    outhat.n2[:,:] = y5 .+ ky .* b.* outhat.h2;
+    outhat.m2[:,:] = y4 -  kx .* b.* outhat.h2;
     outhat.h1[:,:] = y3 - (1 .- a) .* outhat.h2;
     outhat.n1[:,:] = RHShat.n1 + ky.*(outhat.h1 + outhat.h2);
     outhat.m1[:,:] = RHShat.m1 - kx.* (outhat.h1 + outhat.h2);
 
     # Into Physical Space
-    idcsft(state, outhat)
-    return outhat, state
+    idcsft(exstate, outhat)
+    return outhat, exstate
 end
 
-include("mjo_sim_pyplot.jl")
-using PyPlot
-using Printf
 function testimex_step(h_time::Float64, every::Int, name::String)
     params = gen_params(h_time);
     IC    = genInitSr(scheme="imex");
@@ -125,7 +122,9 @@ function testimex_step(h_time::Float64, every::Int, name::String)
     state           = deepcopy(IC);     exstate = deepcopy(IC);
     RHShat          = deepcopy(IChat);  outhat  = deepcopy(IChat);
     kx, ky, a, b, c = imex_init(params, h_time);
-    savecontour(state, name*string(1))
+    #savecontour(state, name*string(1))
+    @printf("i=   1: max = %4.2e, maxhat = %4.2e\n", 
+                    maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
     for i = 2 : Int(ceil((365*24*60*60)/(h_time*2*10^5))) # one year's time
         outhat, state = imex_step(
             state, exstate, RHShat, outhat, 
@@ -141,11 +140,8 @@ function testimex_step(h_time::Float64, every::Int, name::String)
                 @printf("i= %3d : max = %4.2e, maxhat = %4.2e\n", 
                     i, maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
             end
-            savecontour(state, name*string(i), draw=:pcolormesh
-                )#1+div(i,every)))
+            #savecontour(state, name*string(i), draw=:pcolormesh)#1+div(i,every)))
         end
-        
-        close(fig)
     end
     return outhat, state
 end
