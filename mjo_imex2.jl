@@ -297,7 +297,7 @@ end
     ak = 1 ./ c; c = c.^2;
     b = 1 ./  (ak .*(aa .+ c)); # actually 1./b
     g = aa ./(aa .+ c)
-    d = 1 ./(1 .+ (-1 + params.AA)* ak.^2 .* aa .+ g) # actually 1 ./d
+    d = ak ./(1 .+ (-1 + params.AA)* ak.^2 .* aa .+ g) # actually ak ./d
     f = (ak .*((-1 + params.AA)*aa .+ params.AA*c))./ (aa .+ c)
 
     kx = (im*h_time*params.Fr) * kx;
@@ -305,12 +305,18 @@ end
     return kx, ky, ak, b, d, f, g
 end
 
+#=
+IC = MJO_State(rand(162,1440), rand(162,1440), rand(162,1440), rand(162,1440), rand(162,1440), rand(162,1440), rand(162,1440));
+IChat = genInitSr(scheme="im")
+=#
+
 function justdiffusion(state::MJO_State, statehat::MJO_State_im, h_time::Float64)
+    grid_x2 = Int(grid_x/2+1);
     kx = ((params.LL/params.RE )* 
     repeat(range(0, stop=grid_x2-1)', grid_y-1,1));
     ky = ((9/2 * params.LL/params.RE)*
     repeat(range(0, stop=grid_y-2), 1,grid_x2));
-    KK = 0.0001 * (params.deg*pi*params.RE)^2/(180.0*params.LL)^2;
+    KK = 0.001 * (params.deg*pi*params.RE)^2/(180.0*params.LL)^2;
     a = 1 ./(1 .+ KK*(kx.^2 + ky.^2))
     statehat = dcsft(state, statehat)
     for f in fieldnames(MJO_State_im)
