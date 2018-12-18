@@ -297,8 +297,9 @@ end
     a = (h_time^2 * params.Fr)*(kx.^2 + ky.^2);
 
     aa = 1 ./(1 .+ a); #actually 1/(1+a)
-    b = (params.AA .+ (params.AA-1)*a) .* aa;
+    b = (params.AA .+ (params.AA-1)*a);
     c = (1 .+a) ./ (1 .+ a .*(1 .+ b));
+    b = b .* aa
 
     kx = (im*h_time*params.Fr) * kx;
     ky = (h_time*params.Fr) * ky
