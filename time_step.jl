@@ -84,8 +84,7 @@ function imex_step(
     outhat::MJO_State_im,
     params::MJO_params, h_time::Float64,
     kx::Array{Complex{Float64},2}, ky::Array{Float64,2}, 
-    a::Array{Float64,2}, b::Array{Float64,2}, g::Array{Float64,2},
-    f::Array{Float64,2}, d::Array{Float64,2};
+    a::Array{Float64,2}, b::Array{Float64,2}, c::Array{Float64,2},
     scheme1=feEXNL::Function, # Default is f_euler OR USE RK4_one
     scheme2=true,             # Default is f_euler OR USE EXNL
     )
@@ -97,19 +96,21 @@ function imex_step(
 
     # Implicit solve
     # Applying Lower^{-1}
-    #y1 = a .* RHShat.m1;
-    #y2 = a .* RHShat.n1
-    y3 = a .* (RHShat.h1 - (1/params.Fr) * (
+    #y1 = RHShat.m1;
+    #y2 = RHShat.n1
+    outhat.h1[:,:] = a .* (RHShat.h1 - (1/params.Fr) * (
         kx .* RHShat.m1 + ky .* RHShat.n1));
-    y4 = RHShat.m2 - kx .* y3;
-    y5 = RHShat.n2 + ky .* y3;
-    y6 = RHShat.h2 - (1/params.Fr)* (kx .* y4 + ky .* y5);
-
+    outhat.m2[:,:] = RHShat.m2 - kx .* outhat.h1;
+    outhat.n2[:,:] = RHShat.n2 + ky .* outhat.h1;
+    outhat.h2[:,:] = c.*(
+        RHShat.h2 - (1/params.Fr)* (
+            kx .* outhat.m2 + ky .* outhat.n2
+            )
+        );
     # Backward Substitution.
-    outhat.h2[:,:] = c .*y6;
-    outhat.n2[:,:] = y5 .+ ky .* b* outhat.h2;
-    outhat.m2[:,:] = y4 -  kx .* b.* outhat.h2;
-    outhat.h1[:,:] = y3 - (1 .- a)* outhat.h2;
+    outhat.n2[:,:] = outhat.n2 .+ ky .* b* outhat.h2;
+    outhat.m2[:,:] = outhat.m2 -  kx .* b.* outhat.h2;
+    outhat.h1[:,:] = outhat.h1 - (1 .- a)* outhat.h2;
     outhat.n1[:,:] = RHShat.n1 + ky.*(outhat.h1 + outhat.h2);
     outhat.m1[:,:] = RHShat.m1 - kx.*(outhat.h1 + outhat.h2);
 
