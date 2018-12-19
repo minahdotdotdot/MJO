@@ -108,9 +108,9 @@ function imex_step(
             )
         );
     # Backward Substitution.
-    outhat.n2[:,:] = outhat.n2 .+ ky .* b* outhat.h2;
+    outhat.n2[:,:] = outhat.n2 .+ ky .* b.* outhat.h2;
     outhat.m2[:,:] = outhat.m2 -  kx .* b.* outhat.h2;
-    outhat.h1[:,:] = outhat.h1 - (1 .- a)* outhat.h2;
+    outhat.h1[:,:] = outhat.h1 - (1 .- a).* outhat.h2;
     outhat.n1[:,:] = RHShat.n1 + ky.*(outhat.h1 + outhat.h2);
     outhat.m1[:,:] = RHShat.m1 - kx.*(outhat.h1 + outhat.h2);
 
@@ -127,8 +127,9 @@ function testimex_step(h_time::Float64, every::Int, name::String)
     RHShat          = deepcopy(IChat);  outhat  = deepcopy(IChat);
     kx, ky, a, b, c = imex_init(params, h_time);
     #savecontour(state, name*string(1))
-    @printf("i=   1: max = %4.2e, maxhat = %4.2e\n", 
-                    maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
+    i=1;
+    @printf("i= %06d : max = %4.2e, maxhat = %4.2e\n", 
+                    i, maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
     for i = 2 : Int(ceil((365*24*60*60)/(h_time*2*10^5))) # one year's time
         outhat, state = imex_step(
             state, exstate, RHShat, outhat, 
@@ -141,8 +142,8 @@ function testimex_step(h_time::Float64, every::Int, name::String)
             elseif istherenan(state)==true || isthereinf(state)==true
                 return i, state
             else
-                @printf("i= %3d : max = %4.2e, maxhat = %4.2e\n", 
-                    i, maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
+                @printf("i= %06d : max = %4.2e, maxhat = %4.2e\n", 
+                   i, maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
             end
             #savecontour(state, name*string(i), draw=:pcolormesh)#1+div(i,every)))
         end

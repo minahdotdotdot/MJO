@@ -213,8 +213,8 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
             ### MOMENTUM
 
             out.m1[jj,ii] = (
-                #- div_flux(state.m1, state.n1, state.h1, state.m1, ii, iii, iiii, jj, delt_x, delt_y)
-                #+ params.Ro*params.y[jj]*state.n1[jj,ii]                             #=+1/Ro*n1=#
+                - div_flux(state.m1, state.n1, state.h1, state.m1, ii, iii, iiii, jj, delt_x, delt_y)
+                + params.Ro*params.y[jj]*state.n1[jj,ii]                             #=+1/Ro*n1=#
                 - params.Fr*(
                     state.h1[jj,ii] * .5*delt_x*(h_sum(state.h1,state.h2,jj,iiii+1)-h_sum(state.h1,state.h2,jj,iii-1))
                     )                                                               #=h_1∂x(h_1+h_2)=#
