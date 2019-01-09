@@ -205,16 +205,14 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
         if ii == 1
             iii = 1441 # to satisfy iii-1 = 1440
         elseif ii == 1440
-            iiii = 0 #to satisfy iiii+1 = 1
+            iiii = 0   # to satisfy iiii+1 = 1
         end
 
         # Ghost cells
         set_ghost_cells(state, ii)
-        #println("column: ",ii)
 
         # Iterate over latitudinal direction.
         for jj = 2:length(params.y)-1
-            #println("row:",jj)
             value_P_RC = P_RC(LL, UU, QQ, B, Qs, state.q[jj,ii], T_Q, BQH, Tratio, state.h2[jj,ii], state.h1[jj,ii],PP)
 
             ### MOMENTUM
@@ -227,7 +225,6 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
                     )                                                               #=h_1∂x(h_1+h_2)=#
                 - state.m1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
                 )
-            #println("m1 done.")
 
             out.n1[jj,ii] = (
                 - div_flux(state.m1, state.n1, state.h1, state.n1, ii, iii, iiii, jj, delt_x, delt_y)
@@ -237,7 +234,6 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
                     )                                                               #=h_1∂y(h_1+h_2)=#
                 - state.n1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
                 )
-            #println("n1 done.")
 
             out.m2[jj,ii] = (
                 - div_flux(state.m2, state.n2, state.h2, state.m2, ii, iii, iiii, jj, delt_x, delt_y)
@@ -247,7 +243,6 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
                     )                                                               #=h_1∂x(h_1+\alpha* h_2)=#
                 + state.m1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
                 )
-            #println("m2 done.")
 
 
             out.n2[jj,ii] = (
@@ -258,15 +253,12 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
                     )                                                               #=h_1∂y(h_1+\alpha*h_2)=#
                 + state.n1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
                 )
-            #println("n2 done.")
 
             ### MASS
 
             out.h1[jj,ii] = (- value_P_RC)
-            #println("h1 done.")
 
             out.h2[jj,ii] = (+ value_P_RC)
-            #println("h2 done.")
 
             ### MOISTURE
             out.q[jj,ii] = (
@@ -274,7 +266,6 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
                 +(-1.0+Qs./(DD*state.q[jj,ii]))*P(LL,UU,QQ,B,Qs,state.q[jj,ii], T_Q,PP) #=\hat{P}(Q)=#
                 + KK*diffusion(state.q, ii, iii, iiii, jj, delt_x, delt_y)
                 )
-            #println("q done.")
         end
     end
     return out
@@ -295,8 +286,8 @@ end
     aa = (h_time^2 * params.Fr)*(kx.^2 + ky.^2);
     c = 1 .+ bb * (kx.^2 + ky.^2)
     ak = 1 ./ c; c = c.^2;
-    b = 1 ./  (ak .*(aa .+ c)); # actually 1./b
-    g = aa ./(aa .+ c)
+    b = 1 ./  (ak .*(aa + c)); # actually 1./b
+    g = aa ./(aa + c)
     d = ak ./(1 .+ (-1 + params.AA)* ak.^2 .* aa .+ g) # actually ak ./d
     f = (ak .*((-1 + params.AA)*aa .+ params.AA*c))./ (aa .+ c)
 
@@ -306,25 +297,13 @@ end
 end
 
 #=
-IC = MJO_State(rand(162,1440), rand(162,1440), rand(162,1440), rand(162,1440), rand(162,1440), rand(162,1440), rand(162,1440));
+IC = MJO_State(
+rand(162,1440), rand(162,1440), 
+rand(162,1440), rand(162,1440), 
+rand(162,1440), rand(162,1440), 
+rand(162,1440));
 IChat = genInitSr(scheme="im")
 =#
-
-function justdiffusion(state::MJO_State, statehat::MJO_State_im, h_time::Float64)
-    grid_x2 = Int(grid_x/2+1);
-    kx = ((params.LL/params.RE )* 
-    repeat(range(0, stop=grid_x2-1)', grid_y-1,1));
-    ky = ((9/2 * params.LL/params.RE)*
-    repeat(range(0, stop=grid_y-2), 1,grid_x2));
-    KK = 0.001 * (params.deg*pi*params.RE)^2/(180.0*params.LL)^2;
-    a = 1 ./(1 .+ KK*(kx.^2 + ky.^2))
-    statehat = dcsft(state, statehat)
-    for f in fieldnames(MJO_State_im)
-        getproperty(statehat, f)[:,:] = a .*getproperty(statehat, f)[:,:]
-    end
-    state = idcsft(state, statehat)
-    return state 
-end
 
 
 

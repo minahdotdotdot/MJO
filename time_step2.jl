@@ -100,9 +100,8 @@ function imex_step(
     # Applying Lower^{-1}
     outhat.m1[:,:] = a .* RHShat.m1;
     outhat.n1[:,:] = a .* RHShat.n1;
-    outhat.h1[:,:] = (RHShat.h1 - (1/params.Fr) * (
-        kx .*outhat.m1 + ky.*outhat.n1)
-    ) .*b;
+    outhat.h1[:,:] = b .*(RHShat.h1 - (1/params.Fr) * (
+        kx .*outhat.m1 + ky.*outhat.n1)); # b is actually 1/b
     outhat.m2[:,:] = a .* (RHShat.m2 - kx .* outhat.h1);
     outhat.n2[:,:] = a .* (RHShat.n2 + ky .* outhat.h1);
     outhat.h2[:,:] = (
@@ -129,12 +128,16 @@ function testimex_step(h_time::Float64, every::Int, name::String; bb::Float64=0)
     IChat = genInitSr(scheme="im");
     state           = deepcopy(IC);     exstate = deepcopy(IC);
     RHShat          = deepcopy(IChat);  outhat  = deepcopy(IChat);
-    bb = bb * (params.deg*pi*params.RE)^2/(180.0*params.LL)^2
+    bb = bb * (params.deg*pi*params.RE)^2/(180.0*params.LL)^2 
+    # (params.deg*pi*params.RE)^2/(180.0*params.LL)^2 /h_time is the CFL condition.
+    # bb is some proportion of CFL condition s.t. bb/h_time == real diffusion constant
+
     kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
-    #savecontour(state, name*string(1))
     @printf("i=   1: max = %4.2e, maxhat = %4.2e\n", 
                     maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
-    for i = 2 : Int(ceil((365*24*60*60)/(h_time*2*10^5))) # one year's time
+    N = Int(ceil(10*(365*24*60*60)/(h_time*2*10^5))); pad=ceil(Int,log10(N/every));
+    #savecontour(state, name*string(1, pad=pad))
+    for i = 2 : N # one year's time
         outhat, state = imex_step(
             state, exstate, RHShat, outhat, 
             params, h_time, kx, ky, a, b, d, f, g
@@ -150,7 +153,7 @@ function testimex_step(h_time::Float64, every::Int, name::String; bb::Float64=0)
                 @printf("i= %3d : max = %4.2e, maxhat = %4.2e\n", 
                     i, maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
             end
-            #savecontour(state, name*string(i), draw=:pcolormesh)#1+div(i,every)))
+            #savecontour(state, name*string(1+div(i,every), pad=pad), draw=:pcolormesh)
         end
     end
     return outhat, state
@@ -213,9 +216,6 @@ function testtime(state, exstate, RHShat, outhat,
     end
     return state
 end
-
-
-
 
 function f_euler_contour(
     initial_state:: MJO_State, 

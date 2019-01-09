@@ -203,11 +203,9 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
 
         # Ghost cells
         set_ghost_cells(state, ii)
-        #println("column: ",ii)
 
         # Iterate over latitudinal direction.
         for jj = 2:length(params.y)-1
-            #println("row:",jj)
             value_P_RC = P_RC(LL, UU, QQ, B, Qs, state.q[jj,ii], T_Q, BQH, Tratio, state.h2[jj,ii], state.h1[jj,ii],PP)
 
             ### MOMENTUM
@@ -221,7 +219,6 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
                 - state.m1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
                 + KK*diffusion(state.m1, ii, iii, iiii, jj, delt_x, delt_y)
                 )
-            #println("m1 done.")
 
             out.n1[jj,ii] = (
                 - div_flux(state.m1, state.n1, state.h1, state.n1, ii, iii, iiii, jj, delt_x, delt_y)
@@ -243,7 +240,6 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
                 + state.m1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
                 + KK*diffusion(state.m2, ii, iii, iiii, jj, delt_x, delt_y)
                 )
-            #println("m2 done.")
 
 
             out.n2[jj,ii] = (
@@ -255,19 +251,16 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
                 + state.n1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
                 + KK*diffusion(state.n2, ii, iii, iiii, jj, delt_x, delt_y)
         )
-            #println("n2 done.")
 
             ### MASS
 
             out.h1[jj,ii] = (- value_P_RC
                 + KK*diffusion(state.h1, ii, iii, iiii, jj, delt_x, delt_y)
                 )
-            #println("h1 done.")
 
             out.h2[jj,ii] = (+ value_P_RC
                 + KK*diffusion(state.h2, ii, iii, iiii, jj, delt_x, delt_y)
                 )
-            #println("h2 done.")
 
             ### MOISTURE
             out.q[jj,ii] = (
@@ -275,7 +268,6 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State)
                 +(-1.0+Qs./(DD*state.q[jj,ii]))*P(LL,UU,QQ,B,Qs,state.q[jj,ii], T_Q,PP) #=\hat{P}(Q)=#
                 + KK*diffusion(state.q, ii, iii, iiii, jj, delt_x, delt_y)
                 )
-            #println("q done.")
         end
     end
     return out

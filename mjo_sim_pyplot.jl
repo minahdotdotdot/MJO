@@ -1,6 +1,5 @@
 include("mjo_a.jl");
 include("smooth_data.jl")
-
 using PyPlot, Printf
 
 function savecontourmaps(evol::Array{MJO_State,1}, str::String; 
