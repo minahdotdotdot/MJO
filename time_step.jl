@@ -130,7 +130,7 @@ function testimex_step(h_time::Float64, every::Int, name::String)
                     1, maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
     N = Int(ceil(10*(365*24*60*60)/(h_time*2*10^5))); #10 years
     pad=ceil(Int,log10(N/every)); 
-    savecontour(state, name*string(1,pad=pad))
+    saveimshow(state, name*string(1,pad=pad))
     for i = 2 : N
         outhat, state = imex_step(
             state, exstate, RHShat, outhat, 
@@ -146,7 +146,7 @@ function testimex_step(h_time::Float64, every::Int, name::String)
                 @printf("i= %06d : max = %4.2e, maxhat = %4.2e\n", 
                    i, maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
             end
-            savecontour(state, name*string(1+div(i,every), pad=pad), draw=:pcolormesh)
+            saveimshow(state, name*string(1+div(i,every), pad=pad))
         end
     end
     return outhat, state
@@ -198,7 +198,7 @@ function f_euler_contour(
     )
     tend = deepcopy(initial_state)
     state = deepcopy(initial_state)
-    savecontour(initial_state, str*"1")
+    savecontourf(initial_state, str*"1")
     for i = 2 : N+1
         dxdt(params, state, tend);
         if istherenan(tend)==true || isthereinf(tend)==true
@@ -206,7 +206,7 @@ function f_euler_contour(
         end
         state = state + h * tend;
         if rem(i,every)==1
-            savecontour(state, str*string(1+div(i,every)))
+            savecontourf(state, str*string(1+div(i,every)))
         end
     end
     return state
@@ -222,7 +222,7 @@ function RK4_contour(
     )
     tend = deepcopy(initial_state)
     state = deepcopy(initial_state)
-    savecontour(initial_state, str*"1")
+    savecontourf(initial_state, str*"1")
     for i = 2 : N+1
         RK4_one(state, tend, params, h)
         if istherenan(tend)==true || isthereinf(tend)==true
@@ -230,7 +230,7 @@ function RK4_contour(
         end
         state = state + h * tend;
         if rem(i,every)==1
-            savecontour(state, str*string(1+div(i,every)))
+            savecontourf(state, str*string(1+div(i,every)))
         end
     end
     return state

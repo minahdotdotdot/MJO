@@ -44,7 +44,7 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String;
     end
 end
 
-@inline function savecontour(state::MJO_State, ii::String; draw::Symbol= :contourf)
+@inline function savecontourf(state::MJO_State, ii::String)
     for f in fieldnames(MJO_State)
         evolfield = 1
         cm = "PuOr"
@@ -62,7 +62,41 @@ end
         fig[:set_size_inches](13,2); 
         ax[:set_aspect]("equal");
         fig[:colorbar](
-            ax[draw](
+            ax[:contourf](
+                params.lon,
+                params.lat[2:end-1,:],
+                evolfield,
+                cmap=cm
+            )
+        );
+        savefig(
+            "../movies/"*string(f)*"/"*ii,
+            pad_inches=.10, 
+            bbox_inches="tight"
+        )
+        close(fig)
+    end
+end
+
+@inline function saveimshow(state::MJO_State, ii::String)
+    for f in fieldnames(MJO_State)
+        evolfield = 1
+        cm = "PuOr"
+        if f == :m1 || f ==:n1
+            evolfield = getproperty(state,f)[2:end-1, :]./getproperty(state,:h1)[2:end-1, :];
+        elseif f ==:m2 || f ==:n2
+            evolfield = getproperty(state,f)[2:end-1, :]./getproperty(state,:h2)[2:end-1, :];
+        else
+            evolfield = getproperty(state,f)[2:end-1, :];
+            if f ==:q
+                cm = "BuGn"
+            end
+        end
+        fig, ax = subplots(); 
+        fig[:set_size_inches](13,2); 
+        ax[:set_aspect]("equal");
+        fig[:colorbar](
+            ax[:imshow](
                 evolfield,
                 cmap=cm,
                 extent=(0, 360, -20, 20)
@@ -76,7 +110,6 @@ end
         close(fig)
     end
 end
-
 
 
 
