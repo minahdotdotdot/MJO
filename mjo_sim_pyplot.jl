@@ -63,10 +63,9 @@ end
         ax[:set_aspect]("equal");
         fig[:colorbar](
             ax[draw](
-                params.lon, 
-                params.lat[2:end-1],  
                 evolfield,
-                cmap=cm
+                cmap=cm,
+                extent=(0, 360, -20, 20)
             )
         );
         savefig(
