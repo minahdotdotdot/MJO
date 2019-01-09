@@ -54,7 +54,9 @@ end
             evolfield = getproperty(state,f)[2:end-1, :]./getproperty(state,:h2)[2:end-1, :];
         else
             evolfield = getproperty(state,f)[2:end-1, :];
-            cm = "BuGn"
+            if f ==:q
+                cm = "BuGn"
+            end
         end
         fig, ax = subplots(); 
         fig[:set_size_inches](13,2); 
