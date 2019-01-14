@@ -73,26 +73,43 @@ function RK4(initial_state::MJO_State, params::MJO_params, h::Float64, N::Int, e
     end
     return evol
 end
-# scheme1: always gives the explicit update. 
-#        : (NL^{(n+1)} = EXPLICITscheme(NL^{(n)})
-#        : It is either feEXNL or RK4_one
-# scheme2: necessary to tell RK4_one to use EXNL instead of dxdt. 
-function imex_step(
-    state::MJO_State, 
-    exstate::MJO_State,
+
+@inline function no0rem(x::Int, y::Int)
+    r = rem(x,y)
+    if r == 0
+        return y
+    else
+        return r
+    end
+end
+
+function ab4_step(state::MJO_State, 
+    update::MJO_State, 
+    tendlist::Array{MJO_State,1}, 
+    i::Int, 
+    params::MJO_params; 
+    bb::Float64, h_time::Float64,
+    xind::Array{Array{Int,1},1}=[[4,3,2,1],[1,4,3,2],[2,1,4,3],[3,2,1,4]])
+    #i>5 is the true index number.
+    #This function will calculate the state at t_i. 
+    #state is the state at t_{i-1}
+    update =  state + h_time * (
+        55/24 * tendlist[xind[no0rem(i,4)][1]] 
+        -59/24 * tendlist[xind[no0rem(i,4)][2]] 
+        +37/24 * tendlist[xind[no0rem(i,4)][3]] 
+        -9/24 * tendlist[xind[no0rem(i,4)][4]] 
+        )
+    tendlist[no0rem(i,4)] = EXNL(params, update, state; bb=bb, h_time=h_time)
+    return update, tendlist
+end
+
+@inline function imsolve(exstate::MJO_State,
     RHShat::MJO_State_im, 
     outhat::MJO_State_im,
     params::MJO_params, h_time::Float64,
     kx::Array{Complex{Float64},2}, ky::Array{Float64,2}, 
     a::Array{Float64,2}, b::Array{Float64,2}, d::Array{Float64,2},
-    f::Array{Float64,2}, g::Array{Float64,2};
-    scheme1=feEXNL::Function, # Default is f_euler OR USE RK4_one
-    scheme2=true,             # Default is f_euler OR USE EXNL
-    bb::Float64=0.0
-    )
-    Fr = params.Fr;
-    # Calculate RHS.
-    exstate = scheme1(params, state, exstate, h_time; scheme2=scheme2, bb=bb);
+    f::Array{Float64,2}, g::Array{Float64,2})
     # Into Fourier/Cos/Sin Space
     dcsft(exstate, RHShat)
 
@@ -119,46 +136,32 @@ function imex_step(
 
     # Into Physical Space
     idcsft(exstate, outhat)
-    return outhat, exstate
+    return exstate
 end
 
-function testimex_step(h_time::Float64, every::Int, name::String; bb::Float64=0)
-    params = gen_params(h_time);
-    IC    = genInitSr(scheme="imex");
-    IChat = genInitSr(scheme="im");
-    state           = deepcopy(IC);     exstate = deepcopy(IC);
-    RHShat          = deepcopy(IChat);  outhat  = deepcopy(IChat);
-    bb = bb * (params.deg*pi*params.RE)^2/(180.0*params.LL)^2 
-    # (params.deg*pi*params.RE)^2/(180.0*params.LL)^2 /h_time is the CFL condition.
-    # bb is some proportion of CFL condition s.t. bb/h_time == real diffusion constant
-
-    kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
-    @printf("i=   1: max = %4.2e, maxhat = %4.2e\n", 
-                    maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
-    N = Int(ceil(10*(365*24*60*60)/(h_time*2*10^5))); pad=ceil(Int,log10(N/every));
-    saveimshow(state, name*string(1, pad=pad))
-    for i = 2 : N # one year's time
-        outhat, state = imex_step(
-            state, exstate, RHShat, outhat, 
-            params, h_time, kx, ky, a, b, d, f, g
-            #, scheme1=RK4_one, scheme2=EXNL
-            ,bb=bb
-            );
-        if rem(i, every) ==1
-            if istherenan(outhat)==true || isthereinf(outhat)==true
-                return i, outhat
-            elseif istherenan(state)==true || isthereinf(state)==true
-                return i, state
-            else
-                @printf("i= %3d : max = %4.2e, maxhat = %4.2e\n", 
-                    i, maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
-            end
-            saveimshow(state, name*string(1+div(i,every), pad=pad))
-        end
-    end
-    return outhat, state
+# scheme1: always gives the explicit update. 
+#        : (NL^{(n+1)} = EXPLICITscheme(NL^{(n)})
+#        : It is either feEXNL or RK4_one
+# scheme2: necessary to tell RK4_one to use EXNL instead of dxdt. 
+function imex_step(
+    state::MJO_State, 
+    exstate::MJO_State,
+    RHShat::MJO_State_im, 
+    outhat::MJO_State_im,
+    params::MJO_params, h_time::Float64,
+    kx::Array{Complex{Float64},2}, ky::Array{Float64,2}, 
+    a::Array{Float64,2}, b::Array{Float64,2}, d::Array{Float64,2},
+    f::Array{Float64,2}, g::Array{Float64,2};
+    scheme1=feEXNL::Function, # Default is f_euler OR USE RK4_one
+    scheme2=true,             # Default is f_euler OR USE EXNL
+    bb::Float64=0.0
+    )
+    # Calculate RHS.
+    exstate = scheme1(params, state, exstate, h_time; scheme2=scheme2, bb=bb);
+    state = imsolve(exstate, RHShat, outhat, params, h_time,
+    kx, ky, a, b, d, f, g)
+    return state
 end
-
 
 function imex(
     IC::MJO_State, IChat::MJO_State_im, h_time::Float64, 
@@ -177,7 +180,7 @@ function imex(
     for i = 2 : N+1
         state = imex_step(
             state, exstate, RHShat, outhat, 
-            params, h_time, kx, ky, a, b, c,
+            params, h_time, kx, ky, a, b, d, f, g,
             scheme1=scheme1, scheme2=scheme2,
             bb=bb
             );
@@ -197,6 +200,125 @@ function imex(
     return evol
 end
 
+function imex_ab4(IC::MJO_State, IChat::MJO_State_im, h_time::Float64, 
+    N::Int, every::Int;
+    bb::Float64=0)
+    state           = deepcopy(IC);     exstate = deepcopy(IC);
+    RHShat          = deepcopy(IChat);  outhat  = deepcopy(IChat);
+
+    params = gen_params(h_time);
+    bb = bb * (params.deg*pi*params.RE)^2/(180.0*params.LL)^2
+    kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
+
+    #Do Adams-Bashford for s = 1, 2, 3. 
+    evol        = Array{MJO_State,1}(undef, div(N, every)+1)
+    tendlist    = Array{MJO_State,1}(undef,4)
+    evol[1]     = IC;
+    tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    #=2=# state = imsolve(state+h_time*tendlist[1], RHShat, outhat, params, h_time,
+    kx, ky, a, b, d, f, g);
+    tendlist[2] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    #=3=#state  = imsolve(state+ h_time*(3/2*tendlist[2]-1/2*tendlist[1]), 
+        RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
+    tendlist[3] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    #=4=#state  = imsolve(state + h_time*(23/12*tendlist[3]-16/12*tendlist[2]+5/12*tendlist[1]), 
+        RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
+    tendlist[4] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    # This code assumes: every>4. 
+    for i = 5 : N+1
+        exstate, tendlist = ab4_step(state, exstate, tendlist, i, params, bb=bb, h_time=h_time) #get exstate
+        state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
+        if istherenan(state)==true||isthereinf(state)==true
+            print(i)
+            return evol[1:div(i,every)]
+        end
+        if rem(i, every) ==1
+            evol[1+div(i,every)] = state
+        end
+    end
+    return evol
+end
+function testimex_ab4(h_time::Float64, every::Int, name::String; bb::Float64=0)
+    params = gen_params(h_time);
+    IC    = genInitSr(scheme="imex");
+    IChat = genInitSr(scheme="im");
+    state           = deepcopy(IC);     exstate = deepcopy(IC);
+    RHShat          = deepcopy(IChat);  outhat  = deepcopy(IChat);
+    bb = bb * (params.deg*pi*params.RE)^2/(180.0*params.LL)^2 
+    # (params.deg*pi*params.RE)^2/(180.0*params.LL)^2 /h_time is the CFL condition.
+    # bb is some proportion of CFL condition s.t. bb/h_time == real diffusion constant
+
+    kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
+    @printf("i=   1: max = %4.2e, maxhat = %4.2e\n", 
+                    maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
+    N = Int(ceil(10*(365*24*60*60)/(h_time*2*10^5))); pad=ceil(Int,log10(N/every));
+    #saveimshow(state, name*string(1, pad=pad))
+    #Do Adams-Bashford for s = 1, 2, 3. 
+    evol        = Array{MJO_State,1}(undef, div(N, every)+1)
+    tendlist    = Array{MJO_State,1}(undef,4)
+    evol[1]     = IC;
+    tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    #=2=# state = imsolve(state+h_time*tendlist[1], RHShat, outhat, params, h_time,
+    kx, ky, a, b, d, f, g);
+    tendlist[2] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    #=3=#state  = imsolve(state+ h_time*(3/2*tendlist[2]-1/2*tendlist[1]), 
+        RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
+    tendlist[3] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    #=4=#state  = imsolve(state + h_time*(23/12*tendlist[3]-16/12*tendlist[2]+5/12*tendlist[1]), 
+        RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
+    tendlist[4] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    # This code assumes: every>4. 
+    for i = 5 : N+1
+        exstate, tendlist = ab4_step(state, exstate, tendlist, i, params, bb=bb, h_time=h_time) #get exstate
+        state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
+        if rem(i, every) ==1
+            if istherenan(state)==true || isthereinf(state)==true
+                return i, state
+            else
+                @printf("i= %3d : max = %4.2e\n", 
+                    i, maximum(abs.(state.m1)))
+            end
+            #saveimshow(state, name*string(1+div(i,every), pad=pad))
+        end
+    end
+    return evol
+end
+
+
+function testimex_step(h_time::Float64, every::Int, name::String; bb::Float64=0)
+    params = gen_params(h_time);
+    IC    = genInitSr(scheme="imex");
+    IChat = genInitSr(scheme="im");
+    state           = deepcopy(IC);     exstate = deepcopy(IC);
+    RHShat          = deepcopy(IChat);  outhat  = deepcopy(IChat);
+    bb = bb * (params.deg*pi*params.RE)^2/(180.0*params.LL)^2 
+    # (params.deg*pi*params.RE)^2/(180.0*params.LL)^2 /h_time is the CFL condition.
+    # bb is some proportion of CFL condition s.t. bb/h_time == real diffusion constant
+
+    kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
+    @printf("i=   1: max = %4.2e, maxhat = %4.2e\n", 
+                    maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
+    N = Int(ceil(10*(365*24*60*60)/(h_time*2*10^5))); pad=ceil(Int,log10(N/every));
+    saveimshow(state, name*string(1, pad=pad))
+    for i = 2 : N # one year's time
+        state = imex_step(
+            state, exstate, RHShat, outhat, 
+            params, h_time, kx, ky, a, b, d, f, g
+            #, scheme1=RK4_one, scheme2=EXNL
+            ,bb=bb
+            );
+        if rem(i, every) ==1
+            if istherenan(state)==true || isthereinf(state)==true
+                return i, state
+            else
+                @printf("i= %3d : max = %4.2e\n", 
+                    i, maximum(abs.(state.m1)))
+            end
+            saveimshow(state, name*string(1+div(i,every), pad=pad))
+        end
+    end
+    return outhat, state
+end
 
 bb=0.001
 IC = genInitSr(scheme="imex"); IChat = genInitSr(scheme="im");
