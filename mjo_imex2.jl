@@ -187,7 +187,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
 
     #Set diffusion constant for q equations. 
     KK = 0; 
-    if bb==0 && h_time ==0
+    if bb==0 
         KK = params.KK            :: Float64
     else
         KK = bb/h_time
