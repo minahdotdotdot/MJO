@@ -227,7 +227,7 @@ function imex_ab4(IC::MJO_State, IChat::MJO_State_im, h_time::Float64,
     # This code assumes: every>4. 
     for i = 5 : N+1
         exstate, tendlist = ab4_step(state, exstate, tendlist, i, params, bb=bb, h_time=h_time) #get exstate
-        exstate.q[:,:] = exstate.q[:,:] + sqrt(h_time)*4.0e-7*tanh(3.*exstate.q[:,:]).*randn(size(exstate.q))
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh(3.*exstate.q).*randn(size(exstate.q))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
         if istherenan(state)==true||isthereinf(state)==true
             print(i)
@@ -271,6 +271,7 @@ function testimex_ab4(h_time::Float64, every::Int, name::String; bb::Float64=0)
     # This code assumes: every>4. 
     for i = 5 : N+1
         exstate, tendlist = ab4_step(state, exstate, tendlist, i, params, bb=bb, h_time=h_time) #get exstate
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh(3.*exstate.q).*randn(size(exstate.q))
         state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
         if rem(i, every) ==1
             if istherenan(state)==true || isthereinf(state)==true
