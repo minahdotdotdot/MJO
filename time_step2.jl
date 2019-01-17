@@ -239,7 +239,7 @@ function imex_ab4(IC::MJO_State, IChat::MJO_State_im, h_time::Float64,
     end
     return evol
 end
-function testimex_ab4(h_time::Float64, every::Int, name::String; bb::Float64=0)
+function testimex_ab4(h_time::Float64, every::Int, name::String)#; bb::Float64=0)
     params = gen_params(h_time);
     IC    = genInitSr(scheme="imex");
     IChat = genInitSr(scheme="im");
@@ -253,7 +253,7 @@ function testimex_ab4(h_time::Float64, every::Int, name::String; bb::Float64=0)
     @printf("i=   1: max = %4.2e, maxhat = %4.2e\n", 
                     maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
     N = Int(ceil(10*(365*24*60*60)/(h_time*2*10^5))); pad=ceil(Int,log10(N/every));
-    #saveimshow(state, name*string(1, pad=pad))
+    saveimshow(state, name*string(1, pad=pad))
     #Do Adams-Bashford for s = 1, 2, 3. 
     evol        = Array{MJO_State,1}(undef, div(N, every)+1)
     tendlist    = Array{MJO_State,1}(undef,4)
@@ -271,7 +271,7 @@ function testimex_ab4(h_time::Float64, every::Int, name::String; bb::Float64=0)
     # This code assumes: every>4. 
     for i = 5 : N+1
         exstate, tendlist = ab4_step(state, exstate, tendlist, i, params, bb=bb, h_time=h_time) #get exstate
-        exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh(3.0*exstate.q).*randn(size(exstate.q))
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh.(3.0*exstate.q).*randn(size(exstate.q))
         state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
         if rem(i, every) ==1
             if istherenan(state)==true || isthereinf(state)==true
@@ -280,7 +280,7 @@ function testimex_ab4(h_time::Float64, every::Int, name::String; bb::Float64=0)
                 @printf("i= %3d : max = %4.2e\n", 
                     i, maximum(abs.(state.m1)))
             end
-            #saveimshow(state, name*string(1+div(i,every), pad=pad))
+            saveimshow(state, name*string(1+div(i,every), pad=pad))
         end
     end
     return evol
