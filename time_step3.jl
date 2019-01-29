@@ -42,7 +42,6 @@ end
 
 @inline function RK4_step(state::MJO_State, 
     tend::MJO_State, 
-    tendlist=0, 
     i::Int, 
     params::MJO_params; 
     bb::Float64, h_time::Float64, scheme::Function=EXNL)
@@ -199,7 +198,7 @@ Adams-Bashford with n steps (abn_step) =#
 
 
 function imex(N::Int, every::Int, h_time::Float64; 
-    bb::Float64=0.042, multistep::Bool=true, step::Int=3, exscheme::Function,
+    bb::Float64=0.042, multistep::Bool=true, step::Int=1, exscheme::Function=ab1_step,
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step])
     params = gen_params(h_time);
     IC     = genInitSr(scheme="imex");
@@ -208,15 +207,14 @@ function imex(N::Int, every::Int, h_time::Float64;
     RHShat = deepcopy(IChat);  outhat  = deepcopy(IChat);
     bb     = bb*h_time; #input bb should be the actual diffusion constant: K = bb/h_time.
     kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
-    tendlist = 0; start = 2
+    tendlist = Array{MJO_State,1}(undef,step); start = 2
     evol     = Array{MJO_State,1}(undef, div(N, every)+1);
     evol[1] = IC;
     if multistep==true
-        tendlist = Array{MJO_State,1}(undef,step)
         for i = 1 : step-1
             tendlist[i] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
-            exstate, tendlist = msfunc[i](tendlist, i)
-            exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh(3.0*exstate.q).*randn(size(exstate.q))
+            exstate, tendlist = msfunc[i](state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
+            exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh.(3.0*exstate.q).*randn(size(exstate.q))
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
         end
         tendlist[step] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
@@ -225,7 +223,7 @@ function imex(N::Int, every::Int, h_time::Float64;
     end
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
-        exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh(3.0*exstate.q).*randn(size(exstate.q))
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh.(3.0*exstate.q).*randn(size(exstate.q))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
         if rem(i, every) ==1
             evol[1+div(i,every)] = state
@@ -239,7 +237,7 @@ end
 ###################
 
 function imex_print(N::Int, every::Int, h_time::Float64, name::String; 
-    bb::Float64=0.042, multistep::Bool=true, step::Int=3, exscheme::Function,
+    bb::Float64=0.042, multistep::Bool=true, step::Int=3, exscheme::Function=ab1_step,
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step])
     params = gen_params(h_time);
     IC     = genInitSr(scheme="imex");
@@ -254,8 +252,8 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
         tendlist = Array{MJO_State,1}(undef,step)
         for i = 1 : step-1
             tendlist[i] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
-            exstate, tendlist = msfunc[i](tendlist, i)
-            exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh(3.0*exstate.q).*randn(size(exstate.q))
+            exstate, tendlist = msfunc[i](state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
+            exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh.(3.0*exstate.q).*randn(size(exstate.q))
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
         end
         tendlist[step] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
@@ -264,12 +262,11 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     end
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
-        exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh(3.0*exstate.q).*randn(size(exstate.q))
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh.(3.0*exstate.q).*randn(size(exstate.q))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
         if rem(i, every) ==1
             saveimshow(state, name*string(1+div(i,every), pad=pad))
         end
     end
-    return evol
 end
 
