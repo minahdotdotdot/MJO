@@ -50,9 +50,9 @@ end
         evolfield = 1
         cm = "PuOr"
         if f == :m1 || f ==:n1
-            evolfield = getproperty(state,f)[2:end-1, :]./getproperty(state,:h1)[2:end-1, :];
+            evolfield = getproperty(state,f)[2:end-1, :]./(1 .+getproperty(state,:h1)[2:end-1, :]);
         elseif f ==:m2 || f ==:n2
-            evolfield = getproperty(state,f)[2:end-1, :]./getproperty(state,:h2)[2:end-1, :];
+            evolfield = getproperty(state,f)[2:end-1, :]./(1 .+getproperty(state,:h2)[2:end-1, :]);
         else
             evolfield = getproperty(state,f)[2:end-1, :];
             if f ==:q
@@ -84,9 +84,9 @@ end
         evolfield = 1
         cm = "PuOr"
         if f == :m1 || f ==:n1
-            evolfield = getproperty(state,f)[2:end-1, :]./getproperty(state,:h1)[2:end-1, :];
+            evolfield = getproperty(state,f)[2:end-1, :]./(1 .+getproperty(state,:h1)[2:end-1, :]);
         elseif f ==:m2 || f ==:n2
-            evolfield = getproperty(state,f)[2:end-1, :]./getproperty(state,:h2)[2:end-1, :];
+            evolfield = getproperty(state,f)[2:end-1, :]./(1 .+getproperty(state,:h2)[2:end-1, :]);
         else
             evolfield = getproperty(state,f)[2:end-1, :];
             if f ==:q

@@ -3,7 +3,7 @@ include("mjo_a.jl")
 include("mjo_ex.jl")
 include("mjo_sim_pyplot.jl")
 include("mjo_imex2.jl")
-
+using Printf
 ######################
 ## Inline Functions ##
 ######################
@@ -16,28 +16,26 @@ include("mjo_imex2.jl")
     end
 end
 
-######################
-## Explicit Schemes ##
-######################
-
-function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::Int, every::Int)
-    tend = deepcopy(initial_state)
-    evol = Array{MJO_State,1}(undef,div(N, every)+1)
-    evol[1] = initial_state
-    state = deepcopy(initial_state)
-    for i = 2 : N+1
-        dxdt(params, state, tend);
-        if istherenan(tend) == true || isthereinf(tend) ==true
-            print(i)
-            return evol[1:div(i, every)]
-        end
-        state = state + h * tend;
-        if rem(i,every) == 1
-            evol[1+div(i, every)] = state
-        end
-        
+##################################
+## Single-step Explicit Schemes ##
+##################################
+# Adams-Bashford 1 IS forward euler.
+@inline function ab1_step(state::MJO_State, 
+    update::MJO_State, 
+    tendlist::Array{MJO_State,1}, 
+    i::Int, 
+    params::MJO_params; 
+    bb::Float64, h_time::Float64, init::Bool=false)
+    #i>5 is the true index number.
+    #This function will calculate the state at t_i. 
+    #state is the state at t_{i-1}
+    update =  state + h_time * tendlist[1] 
+    ind = 2
+    if init==false
+        ind = no0rem(i,1)
     end
-    return evol
+    tendlist[ind] = EXNL(params, update, state; bb=bb, h_time=h_time)
+    return update, tendlist
 end
 
 @inline function RK4_step(state::MJO_State, 
@@ -60,45 +58,14 @@ end
     return yn + (1/6)*k, 0
 end
 
-function RK4(initial_state::MJO_State, params::MJO_params, h::Float64, N::Int, every::Int)
-    evol = Array{MJO_State,1}(undef, div(N, every)+1)
-    evol[1] = initial_state
-    state = deepcopy(initial_state)
-    tend = deepcopy(initial_state)
-    for i = 2 : N+1
-        state = RK4_step(state, tend, params, h)
-        if rem(i,every)==1
-            if istherenan(state)==true || isthereinf(state)==true
-                print(i)
-                return evol[1:div(i, every)]
-            end
-            evol[1+div(i, every)] = state
-        end
-    end
-    return evol
-end
-
-@inline function ab1_step(state::MJO_State, 
-    update::MJO_State, 
-    tendlist::Array{MJO_State,1}, 
-    i::Int, 
-    params::MJO_params; 
-    bb::Float64, h_time::Float64)
-    #i>5 is the true index number.
-    #This function will calculate the state at t_i. 
-    #state is the state at t_{i-1}
-    update =  state + h_time * tendlist[1] 
-    tendlist[2] = EXNL(params, update, state; bb=bb, h_time=h_time)
-    return update, tendlist
-end
-
 @inline function ab2_step(state::MJO_State, 
     update::MJO_State, 
     tendlist::Array{MJO_State,1}, 
     i::Int, 
     params::MJO_params; 
     bb::Float64, h_time::Float64,
-    xind::Array{Array{Int,1},1}=[[2,1],[1,2]])
+    xind::Array{Array{Int,1},1}=[[2,1],[1,2]],
+    init::Bool=false)
     #i>5 is the true index number.
     #This function will calculate the state at t_i. 
     #state is the state at t_{i-1}
@@ -106,7 +73,11 @@ end
         3/2 * tendlist[xind[no0rem(i,2)][1]] 
         -1/2 * tendlist[xind[no0rem(i,2)][2]] 
         )
-    tendlist[no0rem(i,2)] = EXNL(params, update, state; bb=bb, h_time=h_time)
+    ind = 3
+    if init==false
+        ind = no0rem(i,2)
+    end
+    tendlist[ind] = EXNL(params, update, state; bb=bb, h_time=h_time)
     return update, tendlist
 end
 
@@ -116,7 +87,8 @@ end
     i::Int, 
     params::MJO_params; 
     bb::Float64, h_time::Float64,
-    xind::Array{Array{Int,1},1}=[[3,2,1],[1,3,2],[2,1,3]])
+    xind::Array{Array{Int,1},1}=[[3,2,1],[1,3,2],[2,1,3]],
+    init::Bool=false)
     #i>5 is the true index number.
     #This function will calculate the state at t_i. 
     #state is the state at t_{i-1}
@@ -125,7 +97,11 @@ end
         -16/12 * tendlist[xind[no0rem(i,3)][2]] 
         +5/12 * tendlist[xind[no0rem(i,3)][3]]
         )
-    tendlist[no0rem(i,3)] = EXNL(params, update, state; bb=bb, h_time=h_time)
+    ind = 4;
+    if init ==false
+        ind = no0rem(i,3)
+    end
+    tendlist[ind] = EXNL(params, update, state; bb=bb, h_time=h_time)
     return update, tendlist
 end
 
@@ -190,12 +166,48 @@ end
 #########################
 ## Save Time Evolution ##
 #########################
+function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::Int, every::Int)
+    tend = deepcopy(initial_state)
+    evol = Array{MJO_State,1}(undef,div(N, every)+1)
+    evol[1] = initial_state
+    state = deepcopy(initial_state)
+    for i = 2 : N+1
+        EXNL(params, state, tend);
+        if istherenan(tend) == true || isthereinf(tend) ==true
+            print(i)
+            return evol[1:div(i, every)]
+        end
+        state = state + h * tend;
+        if rem(i,every) == 1
+            evol[1+div(i, every)] = state
+        end
+        
+    end
+    return evol
+end
+
+function RK4(initial_state::MJO_State, params::MJO_params, h::Float64, N::Int, every::Int)
+    evol = Array{MJO_State,1}(undef, div(N, every)+1)
+    evol[1] = initial_state
+    state = deepcopy(initial_state)
+    tend = deepcopy(initial_state)
+    for i = 2 : N+1
+        state = RK4_step(state, tend, params, h)
+        if rem(i,every)==1
+            if istherenan(state)==true || isthereinf(state)==true
+                print(i)
+                return evol[1:div(i, every)]
+            end
+            evol[1+div(i, every)] = state
+        end
+    end
+    return evol
+end
 
 #=exscheme can be: 
 forward-euler (ab1_step), 
 explicit RK4 (RK4_step), and 
 Adams-Bashford with n steps (abn_step) =#
-
 
 function imex(N::Int, every::Int, h_time::Float64; 
     bb::Float64=0.042, multistep::Bool=true, step::Int=1, exscheme::Function=ab1_step,
@@ -207,23 +219,24 @@ function imex(N::Int, every::Int, h_time::Float64;
     RHShat = deepcopy(IChat);  outhat  = deepcopy(IChat);
     bb     = bb*h_time; #input bb should be the actual diffusion constant: K = bb/h_time.
     kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
-    tendlist = Array{MJO_State,1}(undef,step); start = 2
+    tendlist = Array{MJO_State,1}(undef, 1); start = 2
     evol     = Array{MJO_State,1}(undef, div(N, every)+1);
-    evol[1] = IC;
+    evol[1] = IC; tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time);
     if multistep==true
-        for i = 1 : step-1
-            tendlist[i] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
-            exstate, tendlist = msfunc[i](state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
+        tendlist = Array{MJO_State,1}(undef, step);
+        tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time);
+        for i = 2 : step
+            exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true);
+            #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
             exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh.(3.0*exstate.q).*randn(size(exstate.q))
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
         end
-        tendlist[step] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
         start = step+1
-        exscheme = msfunc[step]
     end
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
         exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh.(3.0*exstate.q).*randn(size(exstate.q))
+        #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
         if rem(i, every) ==1
             evol[1+div(i,every)] = state
@@ -246,23 +259,25 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     RHShat = deepcopy(IChat);  outhat  = deepcopy(IChat);
     bb     = bb*h_time; #input bb should be the actual diffusion constant: K = bb/h_time.
     kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
-    tendlist = 0; start = 2; pad=ceil(Int,log10(N/every));
+    tendlist = Array{MJO_State,1}(undef, 1); start = 2;
+    tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time);
+    pad=ceil(Int,log10(N/every));
     saveimshow(state, name*string(1, pad=pad))
     if multistep==true
-        tendlist = Array{MJO_State,1}(undef,step)
-        for i = 1 : step-1
-            tendlist[i] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
-            exstate, tendlist = msfunc[i](state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
+        tendlist = Array{MJO_State,1}(undef, step);
+        tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time);
+        for i = 2 : step
+            exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true);
+            #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
             exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh.(3.0*exstate.q).*randn(size(exstate.q))
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
         end
-        tendlist[step] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
         start = step+1
-        exscheme = msfunc[step]
     end
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
         exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh.(3.0*exstate.q).*randn(size(exstate.q))
+        #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
         if rem(i, every) ==1
             saveimshow(state, name*string(1+div(i,every), pad=pad))
