@@ -103,6 +103,25 @@ function ab4_step(state::MJO_State,
     return update, tendlist
 end
 
+function ab3_step(state::MJO_State, 
+    update::MJO_State, 
+    tendlist::Array{MJO_State,1}, 
+    i::Int, 
+    params::MJO_params; 
+    bb::Float64, h_time::Float64,
+    xind::Array{Array{Int,1},1}=[[3,2,1],[1,3,2],[2,1,3]])
+    #i>5 is the true index number.
+    #This function will calculate the state at t_i. 
+    #state is the state at t_{i-1}
+    update =  state + h_time * (
+        23/12 * tendlist[xind[no0rem(i,3)][1]] 
+        -16/12 * tendlist[xind[no0rem(i,3)][2]] 
+        +5/12 * tendlist[xind[no0rem(i,3)][3]]
+        )
+    tendlist[no0rem(i,3)] = EXNL(params, update, state; bb=bb, h_time=h_time)
+    return update, tendlist
+end
+
 @inline function imsolve(exstate::MJO_State,
     RHShat::MJO_State_im, 
     outhat::MJO_State_im,
@@ -285,7 +304,86 @@ function testimex_ab4(h_time::Float64, every::Int, name::String)#; bb::Float64=0
     end
     return evol
 end
+function imex_ab3(IC::MJO_State, IChat::MJO_State_im, h_time::Float64, 
+    N::Int, every::Int;
+    bb::Float64=0)
+    state           = deepcopy(IC);     exstate = deepcopy(IC);
+    RHShat          = deepcopy(IChat);  outhat  = deepcopy(IChat);
 
+    params = gen_params(h_time);
+    bb = 0.042*h_time; #bb * (params.deg*pi*params.RE)^2/(180.0*params.LL)^2
+    kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
+
+    #Do Adams-Bashford for s = 1, 2. 
+    evol        = Array{MJO_State,1}(undef, div(N, every)+1)
+    tendlist    = Array{MJO_State,1}(undef,3)
+    evol[1]     = IC;
+    tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    #=2=# state = imsolve(state+h_time*tendlist[1], RHShat, outhat, params, h_time,
+    kx, ky, a, b, d, f, g);
+    tendlist[2] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    #=3=#state  = imsolve(state+ h_time*(3/2*tendlist[2]-1/2*tendlist[1]), 
+        RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
+    tendlist[3] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    # This code assumes: every>3. 
+    for i = 4 : N+1
+        exstate, tendlist = ab3_step(state, exstate, tendlist, i, params, bb=bb, h_time=h_time) #get exstate
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh(3.0*exstate.q).*randn(size(exstate.q))
+        state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
+        if istherenan(state)==true||isthereinf(state)==true
+            print(i)
+            return evol[1:div(i,every)]
+        end
+        if rem(i, every) ==1
+            evol[1+div(i,every)] = state
+        end
+    end
+    return evol
+end
+
+function testimex_ab3(h_time::Float64, every::Int, name::String)#; bb::Float64=0)
+    params = gen_params(h_time);
+    IC    = genInitSr(scheme="imex");
+    IChat = genInitSr(scheme="im");
+    state           = deepcopy(IC);     exstate = deepcopy(IC);
+    RHShat          = deepcopy(IChat);  outhat  = deepcopy(IChat);
+    bb = 0.042*h_time; #bb * (params.deg*pi*params.RE)^2/(180.0*params.LL)^2 
+    # (params.deg*pi*params.RE)^2/(180.0*params.LL)^2 /h_time is the CFL condition.
+    # bb is some proportion of CFL condition s.t. bb/h_time == real diffusion constant
+
+    kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
+    @printf("i=   1: max = %4.2e, maxhat = %4.2e\n", 
+                    maximum(abs.(state.m1)), maximum(norm.(outhat.m1)))
+    N = Int(ceil(10*(365*24*60*60)/(h_time*2*10^5))); pad=ceil(Int,log10(N/every));
+    saveimshow(state, name*string(1, pad=pad))
+    #Do Adams-Bashford for s = 1, 2. 
+    evol        = Array{MJO_State,1}(undef, div(N, every)+1)
+    tendlist    = Array{MJO_State,1}(undef,4)
+    evol[1]     = IC;
+    tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    #=2=# state = imsolve(state+h_time*tendlist[1], RHShat, outhat, params, h_time,
+    kx, ky, a, b, d, f, g);
+    tendlist[2] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    #=3=#state  = imsolve(state+ h_time*(3/2*tendlist[2]-1/2*tendlist[1]), 
+        RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
+    tendlist[3] = EXNL(params, state, exstate, bb=bb, h_time=h_time)
+    # This code assumes: every>4. 
+    for i = 4 : N+1
+        exstate, tendlist = ab3_step(state, exstate, tendlist, i, params, bb=bb, h_time=h_time) #get exstate
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh.(3.0*exstate.q).*randn(size(exstate.q))
+        state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
+        if rem(i, every) ==1
+            if istherenan(state)==true || isthereinf(state)==true
+                return i, state
+            else
+                @printf("i= %3d : max = %4.2e\n", 
+                    i, maximum(abs.(state.m1)))
+            end
+            saveimshow(state, name*string(1+div(i,every), pad=pad))
+        end
+    end
+    return evol
+end
 
 function testimex_step(h_time::Float64, every::Int, name::String; bb::Float64=0)
     params = gen_params(h_time);

@@ -236,7 +236,7 @@ function imex(N::Int, every::Int, h_time::Float64;
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
         exstate.q[:,:] = exstate.q + sqrt(h_time)*4.0e-7*tanh.(3.0*exstate.q).*randn(size(exstate.q))
-        #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
+        @printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
         if rem(i, every) ==1
             evol[1+div(i,every)] = state
