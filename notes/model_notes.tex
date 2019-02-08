@@ -1,0 +1,395 @@
+\documentclass[10pt]{article}
+\usepackage{amsmath,amssymb,amsfonts,amsthm,bm}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{color}
+%\usepackage{ulem}
+
+\newcommand{\dd}[3]{\frac{\text{d}^{#3}{#1}}{\text{d}{#2}^{#3}}}
+\newcommand{\pd}[1]{\partial_{#1}}
+\newcommand{\ov}[1]{\overline{#1}}
+\newcommand{\bu}{\bm{u}}
+\newcommand{\bbu}{\ov{\bu}}
+\newcommand{\rmd}{\,\mathrm{d}}
+\newcommand{\rmD}{\,\mathrm{D}}
+\newcommand{\HH}{\mathcal{H}}
+\renewcommand{\arraystretch}{2}
+\title{Research Notes}
+\author{Minah Yang}
+\date{\today}
+\begin{document}
+\maketitle
+\section*{Summary}
+Currently the plan is to consider at least two, maybe three models. Since the dynamics are simple enough, we keep the equations fully non-linear.
+\begin{itemize}
+	\item We consider a single layer model that includes the moisture dynamics based on the Craig and Mack paper. 
+	Although we are not sure if we can include subsidence drying (it probably does not fit the framework of the equations for the dry dynamics), it is crucial for the double-well potential for the moisture variable, and so we are including it at the moment. 
+	
+	\item We consider a two-layer model with the Craig and Mack moisture dynamics, but we exclude subsidence drying, and we assum $Q_2=0$. 
+	The Laemberts paper use the conservation of moist enthalpy ME ($\frac{\rmd}{\rmd t}\left(\theta + \frac{L}{c_p}Q \right)=0$) to derive equations for $Q$. 
+	This was appropriate when we had assumed that precipitation was the only moisture sink. However, convective moistening, and radiative cooling do affect ME, and it is no longer conserved. 
+	The equations for $Q$ need to be derived again.
+	
+	\item At the suggestion of Hottovy and Stechman who assert that an active upper-layer moisture is neccessary, now we take the two-layer model and allow $Q_2\neq 0$. 
+	We hope to find/derive entrainment of dry air from the upper layer into the bottom layer by allowing this. (Look at Flierl and Davis paper).
+\end{itemize}
+
+\section{Single Layer Model}
+I looked at the Bouchut-Laembert paper for the single-layer equations.
+\begin{align}
+\partial_t \vec{v} + \left( \vec{v}\cdot \nabla \right)\vec{v} &= -g\nabla h - f\hat{z}\times \vec{v}\\
+\partial_t h + \nabla \cdot \left(\vec{v}h\right) &= -\gamma P = -\frac{(h-h_0)}{\tau}H(h_0-h)\\
+\partial_t Q + \nabla \cdot \left(\vec{v}Q\right) &= ?? \label{eq3}
+\end{align}
+
+Craig and Mack suggest a model where the change in moisture (CWV) with respect to time is dependent on three physical phenomena: subsidence drying, convective moistening, and horizontal transport (diffusive?). 
+
+\begin{align}
+\partial_t Q + \nabla \cdot \left(\vec{v}Q\right) &= S + C + T\\
+S &= -\alpha Q \\
+C &= \frac{1-\epsilon}{\epsilon} P \\
+T &= K \nabla^2 Q\\
+P &= a \left(\exp(b\frac{Q}{Q_s}) -1\right)\\
+\epsilon &= \hat{\beta} \frac{Q}{Q_s}
+\end{align}
+The standard values for some of these parameters are as follows: $\hat{\beta} \approx 1.1$, $b \approx 11.4$. Details on the rest can be found in the Craig and Mack paper.
+
+\begin{itemize}
+	\item Radiative cooling appears in this model as $\gamma P$ (layer height equation).
+\end{itemize}
+
+\section{Two-layer, $Q_2 = 0$, no subsidence drying}
+
+\subsection{Rederivation of Laembert 2.15}
+First I will re-derive 2.15 from Laembert's paper. Define the following operators:
+\begin{align*}
+\frac{\rmd}{\rmd t} a &= \partial_t a + \nabla \cdot \left(\vec{u}a\right) + \partial_z (wa)\\
+\Delta a &= \partial_t a + \nabla \cdot \left(\vec{u}a\right)
+\end{align*}
+ where $\vec{u} = (u,v)$, just the horizontal components of velocity.
+ Note that $\frac{\rmd}{\rmd t}$ is equivalent to the standard 3-D Lagrangian derivative as a result of  incompressibility: 
+ 
+\begin{equation}
+\nabla \cdot \vec{u} +\partial_z w= 0
+\label{incoma}
+\end{equation}
+ 
+\begin{align*}
+\frac{\rmd}{\rmd t} a &= \partial_t a + \nabla \cdot \left(\vec{u}a\right) + \partial_z (wa)\\
+&= \partial_t a + (\nabla \cdot \vec{u}) a + \vec{u} \cdot \nabla a + (\partial_z w)a + w \partial_z a  \text{,\quad (Product Rule)}\\
+&= (\partial_t  +\vec{u} \cdot \nabla  +w \partial_z) a
+\end{align*}
+ 
+ 
+ We assume that precipitation is the only  moisture sink: $\frac{\rmd}{\rmd t} \int_{0}^{h} q \rmd z = - P$. We wish to derive an alternate formula for $\frac{\rmd}{\rmd t} \int_{0}^{h} q \rmd z$ by vertically integrating the expression for conservation of moist enthalpy: $\frac{\rmd}{\rmd t} (\theta + \frac{L}{c_p} q) = 0$.  
+ In addition, we have incompressibility:
+
+  We will also let upper case letters represent the vertically integrated versions of the lower case letters. For example, $Q = \int_0^h q \rmd z$. For simplification, I will write $me = \theta + \frac{L}{c_p}q$. 
+ \begin{align*}
+ \Delta ME &= \partial_t \int_{0}^{h} me \rmd z + \nabla \cdot \left(\vec{u}\int_{0}^{h} me \rmd z\right) \\
+ \partial_t \int_{0}^{h} me \rmd z  &= me(h)\partial_t h + \int_{0}^{h} \partial_tme \rmd z\text{\quad(Leibniz Rule)} \\
+ \nabla \cdot \left(\vec{u}\int_{0}^{h} me \rmd z\right) &= \left(\partial_x u + \partial_y v \right) \int_{0}^{h} me \rmd z + \left(u \partial_x \int_{0}^{h} me \rmd z + v \partial_y \int_{0}^{h} me \rmd z\right) \text{\quad (Product Rule)}\\
+ &= \left(\nabla \cdot\vec{u} \right)\int_{0}^{h} me \rmd z + u \left(me(h)\partial_x h + \int_{0}^{h} \partial_x me \rmd z\right) + v \left(me(h)\partial_y h + \int_{0}^{h} \partial_y me \rmd z\right)\text{\quad(Leibniz Rule)} \\
+ &= \left(\nabla \cdot\vec{u} \right)\int_{0}^{h} me \rmd z + me(h)\left(\vec{u}\cdot \nabla h\right) + \vec{u}\cdot \int_{0}^{h}\nabla me \rmd z \\
+ \end{align*} 
+Therefore, we result in: 
+ \begin{equation}
+ \Delta ME = \Delta\int_{0}^{h} me \rmd z = me(h)\left( \partial_t h + \vec{u}\cdot \nabla h\right) + \int_{0}^{h} \partial_tme \rmd z + \left(\nabla \cdot\vec{u} \right)\int_{0}^{h} me \rmd z + \vec{u}\cdot \int_{0}^{h}\nabla me \rmd z
+ \label{ME}
+ \end{equation}
+ Due to conservation of moist enthalpy, we know:
+ \begin{align*}
+ 0 &= \int_{0}^{h} 0 \rmd z = \int_{0}^{h} \frac{\rmd}{\rmd t} me \rmd z \\
+ &= \int_{0}^{h} \partial_t me +\int_{0}^{h} \nabla \cdot \left(\vec{u}me\right) + \int_{0}^{h}\partial_z (wme) \rmd z\\
+ &= \int_{0}^{h} \partial_t me \rmd z + \int_{0}^{h} \left(\nabla \cdot \vec{u}\right) me \rmd z +\int_{0}^h \vec{u} \cdot \nabla me \rmd z + w(h)me(h)-w(0)me(0)
+ \end{align*}
+ Since we are in a mixed layer, $\vec{u}$ and $\nabla \cdot \vec{u}$ are independent from $z$, and we also have $w(0)=0$. 
+ \begin{equation*}
+ 0 = \int_{0}^{h} \partial_t me \rmd z +  (\nabla \cdot \vec{u})\int_{0}^{h}  me \rmd z + \vec{u} \cdot \int_{0}^{h} \nabla me \rmd z +w(h)me(h))
+ \end{equation*}
+Subtracting this from \ref{ME}, we result in:
+\begin{equation}
+\Delta ME = me(h)\left(\partial_t h + (\vec{u}\cdot \nabla h )  - w(h)\right)
+\label{eq1}
+\end{equation}
+
+Vertical integration of the incompressibility condition (\ref{incoma}) gives us another useful identity.
+
+\begin{align}
+0 &= \int_{0}^{h} 0 \rmd z =  \int_{0}^{h} \nabla \cdot \vec{u} + \partial_z w \rmd z \\
+&= (\nabla \cdot \vec{u}) \int_{0}^{h} \rmd z + w(h)\text{\quad (mixed layer is homogenous)}\\
+-w(h) &= h(\nabla \cdot \vec{u}) \label{incomb}
+\end{align}
+Using  \ref{incomb}, product rule, and the equation for conservation of mass ($\Delta h = -W$) in \ref{eq1},  we result in: 
+\begin{align}
+\Delta ME &= me(h)\left(\partial_t h + (\vec{u}\cdot \nabla h )  - w(h)\right) \\
+&= me(h)\left(\partial_t h + \vec{u} \cdot \nabla h + h(\nabla \cdot \vec{u})\right) \\
+&= me(h) \Delta h \\
+&= me(h) (-W)
+\label{eq2}
+\end{align}
+
+Now we invoke that temperature is constant($\equiv \theta_1$) throughout the mixed layer. 
+\begin{align*}
+\Delta ME = \Delta\left(\int_{0}^{h} \theta \rmd z + \frac{L}{c_p}Q \right) &= (\theta(h) + \frac{L}{c_p} q(h))(-W)\\
+\Delta\left(h\theta_1+ \frac{L}{c_p}Q \right)&= (\theta(h) + \frac{L}{c_p} q(h))(-W)\\
+\theta_1 \Delta h + \frac{L}{c_p}\Delta Q &= (\theta(h) + \frac{L}{c_p} q(h))(-W)\\
+\frac{L}{c_p} \Delta Q &= (\theta(h) + \frac{L}{c_p} q(h) - \theta_1)(-W)\\
+&= -\frac{L}{c_p}P
+\end{align*}
+verbatim from Laemberts (2.14): By choosing a ``dry'' stable stratification of the atmosphere, 
+\begin{equation}
+\theta_{i+1} = \theta(z_i) + \frac{L}{c_p}q(z_i) \approx \theta_i + \frac{L}{c_p}q(z_i) > \theta_i. 
+\end{equation}
+Therefore, we are able to write W and P being proportional:
+\begin{align*}
+-W(\theta(h) + \frac{L}{c_p} q(h) - \theta_1) &= -\frac{L}{c_p}P\\
+-W(\theta_2 - \theta_1) &= -\frac{L}{c_p}P \\
+W &= \beta P \\
+\beta &= \frac{L}{c_p}\frac{1}{\theta_2-\theta_1}
+\end{align*}
+
+\subsection{Our actual model}
+Consider writing the convective moistening term into two parts: precipitation, and the resulting moistening. Let $m$ represent moistening.
+We have $c = -p + m$. Following Craig \& Mack's example yields: 
+\begin{equation}
+c = \frac{1-\epsilon}{\epsilon} p = -p + \frac{1}{\epsilon}p
+\end{equation}
+The negative sign on the $p$ makes sense since we will be losing mosture. So we get:
+\begin{equation}
+m = \frac{1}{\epsilon} p
+\end{equation}
+
+This is the primary difference between our model and Laembert's model-- precipitation is NOT the only moisture sink. In other words, we have:
+\begin{equation}
+\Delta Q = -P + M
+\label{neweq}
+\end{equation}
+
+So, now we consider an equation for the moisture with the following physical phenomena: precipitation, moistening, horizontal transport.
+\begin{equation}
+\partial_t q = -p + m + t
+\end{equation}
+
+We also add that radiative cooling is related to the temperature: 
+\begin{equation}
+\frac{\rmd}{\rmd t}\theta = rc
+\end{equation}
+
+If $rc$ and $m$ were excluded, we would still achieve conservation of moist enthalpy. So we can write:
+
+\begin{align*}
+\frac{\rmd}{\rmd t} me = \frac{\rmd}{\rmd t}\left(\theta + \frac{L}{c_p}q\right) &= \frac{\rmd}{\rmd t}\theta + \frac{L}{c_p}\left(\partial_t q + \vec{u}\cdot \nabla q + w\partial_z q\right) \\
+&= \frac{\rmd}{\rmd t}\theta + \frac{L}{c_p}\left(-p + m + t+ \vec{u}\cdot \nabla Q + w\partial_z Q\right) \\
+&= rc +\frac{L}{c_p} m \\
+&= rc +\frac{L}{c_p} \left(\frac{1}{\epsilon} p\right) \\
+\end{align*}
+
+Similarly as before, we compute: $\frac{\rmd}{\rmd t} ME $, and add in our results from incompressibility and conservation of mass.
+\begin{align*}
+ \partial_t h +\vec{u}\cdot \nabla h &= \partial_t h +\nabla(\vec{u}\cdot h) + w(h) \text{\quad (Product Rule and incompressibility)}\\
+ &= \Delta h + w(h) = -W + w(h)\text{\quad (Conservation of Mass) }
+ \end{align*}
+ \begin{equation}
+\Delta ME = \Delta \int_{0}^{h} me \rmd z= me(h)\left( -W + w(h) \right) + \int_{0}^{h} \partial_tme \rmd z + \left(\nabla \cdot\vec{u} \right)\int_{0}^{h} me \rmd z + \vec{u}\cdot \int_{0}^{h}\nabla me \rmd z 
+ \label{eqdt}
+\end{equation}
+  
+ Although we no longer have conservation of moist enthalpy, we can still compute $\frac{\rmd}{\rmd t} me$, and vertically integrate it to get another expression for the integral terms in \ref{eqdt}.  
+\begin{align}
+\int_{0}^{h} \frac{\rmd}{\rmd t} me \rmd z &= \int_{0}^{h} \partial_t me \rmd z + \int_{0}^{h} (\nabla \cdot \vec{u}) me \rmd z + \int_{0}^{h} \vec{u} \cdot \nabla me \rmd z + \int_{0}^{h} \partial_z (w me) \rmd z \\
+&= \int_{0}^{h} \partial_t me \rmd z + (\nabla \cdot \vec{u})\int_{0}^{h}  me \rmd z + \vec{u} \cdot \int_{0}^{h} \nabla me \rmd z + w(h)me(h) \\
+&= RC + \frac{L}{c_p} M \label{eq4}
+\end{align}
+
+Combining \ref{eqdt} and \ref{eq4} results in:
+
+\begin{equation}
+ \Delta ME = -W me(h) + RC + \frac{L}{c_p} M
+\end{equation}
+
+We deconstruct $ME$ into its components to get another relationship between $P$, $W$, and $RC$. 
+\begin{align*}
+\Delta \left(\int_{0}^{h}\theta \rmd z + \frac{L}{c_p}Q \right) &= -W me(h) + RC + \frac{L}{c_p} M \\
+\theta_1(-W) + \frac{L}{c_p}\Delta Q &=  -W me(h) + RC + \frac{L}{c_p} M \\
+W \left(me(h) - \theta_1 \right) &= RC + \frac{L}{c_p} M  - \frac{L}{c_p}\Delta Q\\
+\Delta Q &=\frac{c_p}{L} \left(W \left(\theta_1 - me(h) \right) + RC + \frac{L}{c_p} M  \right)
+\end{align*}
+
+Fitting this with our assumption from before (\ref{neweq}) and the choice of a ``dry'' stable stratification of the atmosphere we result in:
+
+\begin{align}
+W &= \beta\left(P+\frac{c_p}{L} RC\right)\\
+\beta &= \frac{L}{c_p}\frac{1}{\theta_2-\theta_1}
+\end{align}
+
+\subsection{All Governing Equations}
+
+Velocity Equations:
+\begin{align}
+\partial_t \vec{u_1} + (\vec{u_1}\cdot \nabla )\vec{u_1} +  f\hat{k} \times \vec{u_1} &= -g \nabla (h_1 + h_2)	\\
+\partial_t \vec{u_2} + (\vec{u_2}\cdot \nabla )\vec{u_2} +  f\hat{k} \times \vec{u_2} &= -g \nabla (h_1 + \alpha h_2)	 + \frac{\vec{u_1}-\vec{u_2}}{h_2}\beta \left(P + \frac{c_p}{L}RC \right)
+\label{DVel}
+\end{align}
+Here, $\alpha = \frac{\theta_2}{\theta_1}$. 
+We also assume that $W_2 \equiv 0$.
+
+Conservation of Mass (height):
+
+\begin{align}
+\Delta h_1 &= -W_1 = -\beta \left(P + \frac{c_p}{L}RC\right)\\
+\Delta h_2 &= -W_2 + W_1 = \beta \left(P + \frac{c_p}{L}RC\right)
+\label{DHei}
+\end{align}
+
+Moisture Dynamics:
+
+\begin{align}
+\Delta Q &= -P + M\\
+&= \left(-1 + \frac{1}{\epsilon} \right)P
+\label{DMoi}
+\end{align}
+
+\subsection{Nondimensionalization}
+I will be using the following changes of variables. $i=1,2$ All of the first letters on the RHS are the constants, and the second letters are variables. 
+\begin{align}
+\vec{u}_i &= U \vec{\xi}_i\\
+h_i &= H \zeta_i\\
+Q &= \hat{Q} K \\
+x &= \hat{L}X \\
+y &= \hat{L}Y \\
+t &= T \tau \\
+P(Q) &= P (\hat{Q}K)
+\end{align}
+ 
+ \begin{center}
+ 	\begin{tabular}{ |c|c| } 
+ 		\hline
+ 		$\hat{L}$ & $10^6$ m \\ \hline
+ 		$H$ & $5000$ m \\ \hline
+ 		$U$ & $5$ ms$^{-1}$ \\ \hline
+ 		$\hat{Q}$ & $50$ mm = $0.05$ m \\ \hline
+ 		$T_{RC}$ & $16$ days = $1,382,400$ s \\ \hline
+ 	\end{tabular}
+ \end{center}
+
+Setting $U=V$ and $T=\frac{\hat{L}}{U}$, allow us to have the material derivative in terms of all of the new variables. Rewriting all of the nondimensionalized equations in terms of the old variables gives us the following set of equations. In addition, we will write the relationship between the dimensional and nondimensional precipitation functions as: $P(\hat{Q}Q) = \frac{\hat{Q}}{T}\hat{P}(Q)$. 
+
+\subsubsection{Radiative Cooling}
+
+We formulate the radiative cooling function with the following:
+\begin{equation}
+\beta \frac{c_p}{L} RC = -\frac{h_2-h_1}{T_{RC}}\HH(h_2-h_1)
+\end{equation}
+where $H$ is the heaviside function. ??$\frac{c_p}{L}$ has the units of temperature. ?? The heaviside function ensure that only radiative cooling (and not heating!) occurs. That is, when the upper layer  is taller ($h_2 > h_1$), the whole term is negative. $T_{RC}$ is introduced to scale the cooling phenomena. We will approximate it to be $\approx 16$ days. With the nondimensionalized variables, we result in:
+\begin{equation}
+\beta \frac{c_p}{L} RC = -H\frac{h_2-h_1}{T_{RC}}\HH(h_2-h_1).
+\end{equation}
+
+
+Velocity equations:
+
+\begin{equation}
+\partial_{t} \vec{u_1} + (\vec{u_1}\cdot \nabla)\vec{u_1} + \frac{1}{Ro}(\hat{k}\times \vec{u_1}) = -\frac{1}{Fr^2}\nabla (h_1 +h_2)
+\label{NDVel1}
+\end{equation}
+\begin{equation}
+\partial_{t} \vec{u_2} + (\vec{u_2}\cdot \nabla)\vec{u_2} + \frac{1}{Ro}(\hat{k}\times \vec{u_2}) = -\frac{1}{Fr^2}\nabla (h_1 +\alpha h_2) +  \frac{\vec{u_1}-\vec{u_2}}{h_2}\left(\beta\frac{\hat{Q}}{H}\hat{P}(Q)-\frac{T}{T_{RC}}(h_2-h_1)\HH(h_2-h_1)\right)
+\label{NDVel2}
+\end{equation}
+, where we have:
+\begin{align*}
+Ro &= \frac{U}{\hat{L}f} \\ 
+Fr &= \frac{U}{\sqrt{gH}}
+\end{align*}
+
+Conservation of Mass (height):
+\begin{equation}
+\partial_{t}h_1 + \nabla \cdot (\vec{u_1}h_1) = -\left(\beta\frac{\hat{Q}}{H}\hat{P}(Q)-\frac{T}{T_{RC}}(h_2-h_1)\HH(h_2-h_1)\right)
+\label{NDHei1}
+\end{equation}
+\begin{equation}
+\partial_{t}h_2 + \nabla \cdot (\vec{u_2}h_2) = \left(\beta\frac{\hat{Q}}{H}\hat{P}(Q)-\frac{T}{T_{RC}}(h_2-h_1)\HH(h_2-h_1)\right)
+\label{NDHei2}
+\end{equation}
+
+Moisture Dynamics:
+
+\begin{equation}
+\partial_{t} Q + \nabla \cdot (\vec{u_1}Q) = \left(-1+\frac{1}{\epsilon}\right) \hat{P}(Q)
+\label{NDMoi}
+\end{equation}
+
+We will be using several different types of functions for precipitation. Details in the nondimensionalization of the precipitation functions are in a separate document.
+
+
+\subsubsection{Coriolis Parameter, Rossby, and Froude Numbers}
+
+We approximate Coriolis parameter $f= 2 \Omega \sin(\phi)$, where $\phi$ represents the latitude ($^{\circ}$ north or south from the equator). The arclength is our $y \Rightarrow r\phi = y \Rightarrow \phi = \frac{y}{r}$, where $r$ is the radius of the Earth. 
+
+$\sin(\frac{y}{r})\approx \frac{y}{r} = \hat{L} \frac{y}{r}$, where the second $y$ is the new $y$, and $\Omega$ is the angular velocity of Earth's rotation. That is, $\frac{2\pi}{day}$. So, 
+\begin{equation*}
+f \approx \frac{4\pi\hat{L}}{24*3600}\frac{y}{6371000}
+\end{equation*}
+
+\begin{equation*}
+\frac{1}{Ro} = Tf = \frac{\hat{L}f}{U} \approx \frac{4\pi \hat{L}^2}{24*3600*U*6371000} y =\frac{\bar{\beta}\hat{L}^2}{U} \approx 4.56 y
+\end{equation*}
+ where $\bar{\beta} = \frac{4\pi}{\text{(day)(radius of earth)}}$.
+
+\begin{equation}
+\frac{1}{Fr^2} = \frac{gH}{U^2} \frac{ms^{-2}m}{(ms^{-1})^2} \approx 1960
+\end{equation}
+
+\subsection{Parameter Values}
+
+
+
+We desire units in terms of: seconds, meters, and kilograms. Note that for water:
+\begin{align*}
+\frac{kg}{m^2} &= \frac{L}{m^2} = \frac{1000 mL}{m^2}\\
+&= \frac{1000 cm^3}{ (100cm)^2} = \frac{1}{10} cm = 1 mm = 0.001 m 
+\end{align*}
+
+We also approximate $\alpha = \frac{\theta_2}{\theta_1}$ via the relation $\sqrt{g'H} = \sqrt{g(\alpha -1) H} \approx 30 $m$s^{-1}$ (speed of Kelvin wave).
+
+This yields $\alpha \approx 1+\frac{900}{5000g} \approx 1.02$.
+
+
+\begin{center}
+	\begin{tabular}{ |c|c| } 
+		\hline
+		$g$  & $9.80665 m/s^2$ \\  \hline
+		$\alpha$  & $\frac{\theta_2}{\theta_1}\approx 1.02$ \\ \hline
+		$\beta$ &  $\approx 750$ \\ \hline
+		$\epsilon$ &   $\delta \frac{Q}{Qs}$ \\ \hline
+		$\delta$ & $ \approx 1.1$  \\ \hline
+		$b$& $ \approx 11.4$\\ \hline
+		radius of earth & $6,371,000$ m \\ \hline
+		$P$ (kg m$^{-2}$day$^{-1}$ = mm/day)& $a(e^{b\frac{Q}{Qs}}-1)$ \\ 
+		$P$ (m s$^{-1}$) &=  $\frac{a(t)}{86,400,000}(e^{b\frac{Q}{Qs}}-1)$\\
+		$\alpha$ in Craig and Mack & $5 * 10^{-6} s^{-1}$ \\ \hline
+		P$_{av}$ &= $8$ kg m$^{-2}$ day$^{-1}$ = $\frac{8}{86,400,000}$m s$^{-1}$ \\ \hline
+		$a(t)$  &= $\frac{P_{av}}{\frac{1}{A}\int (e^{b\frac{Q}{Qs}}-1)}$ \\ \hline
+	\end{tabular}
+\end{center}
+
+
+\subsection{Conversion into Momentum Flux-form equations (instead of velocity)}
+We multiply $h_1$ to  \ref{NDVel1}, $\vec{u_1}$ to \ref{NDHei1} and add them together, and repeat with the upper layer. Setting $\vec{m_1} = h_1\vec{u_1}$, and $m_2=h_2\vec{u_2}$ gives us:
+
+\begin{equation}
+\partial_t\vec{m_1} + \nabla \cdot \left(\frac{1}{h_1}\vec{m_1}\vec{m_1}\right) + \frac{1}{Ro}\left(\hat{k}\times \vec{m_1}\right) = -\frac{h_1}{Fr^2}\nabla\left(h_1 + h_2\right) -\frac{\vec{m_1}}{h_1} \left( \beta \frac{\hat{Q}}{H}\hat{P}(Q) - \frac{T}{T_{RC}}(h_2-h_1)\HH{(h_2-h_1)}\right)
+\end{equation}
+
+\begin{equation}
+\partial_t\vec{m_2} + \nabla \cdot \left(\frac{1}{h_2}\vec{m_2}\vec{m_2}\right) + \frac{1}{Ro}\left(\hat{k}\times \vec{m_2}\right) = -\frac{h_2}{Fr^2}\nabla\left( h_1 + \alpha h_2\right)  +\frac{\vec{m_1}}{h_1} \left( \beta \frac{\hat{Q}}{H}\hat{P}(Q) - \frac{T}{T_{RC}}(h_2-h_1)\HH{(h_2-h_1)}\right)
+\end{equation}
+
+Note that $\vec{a}\vec{a} = \vec{a}\vec{a}^{\top}$, and $\nabla\cdot (\vec{a}\vec{a}) = \nabla \cdot (\vec{a}\vec{a}^{\top}) = \left(\nabla^{\top}\vec{a}\vec{a}^{\top}\right)^{\top}$ (last tranpose used to result in a column vector.
+
+UPDATE: added diffusion terms to $q$, $h_1$, and $h_2$.
+
+
+\end{document}

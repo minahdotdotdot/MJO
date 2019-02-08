@@ -1,0 +1,222 @@
+\documentclass[10pt]{article}
+\usepackage{amsmath,amssymb,amsfonts,amsthm,bm}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{color}
+%\usepackage{ulem}
+
+\newcommand{\dd}[3]{\frac{\text{d}^{#3}{#1}}{\text{d}{#2}^{#3}}}
+\newcommand{\pd}[1]{\partial_{#1}}
+\newcommand{\ov}[1]{\overline{#1}}
+\newcommand{\bu}{\bm{u}}
+\newcommand{\bbu}{\ov{\bu}}
+\newcommand{\rmd}{\,\mathrm{d}}
+\newcommand{\rmD}{\,\mathrm{D}}
+\newcommand{\HH}{\mathcal{H}}
+\renewcommand{\arraystretch}{2}
+\title{Coding Details}
+\author{Minah Yang}
+\date{\today}
+\begin{document}
+\maketitle
+\section*{Governing Equations}
+\subsubsection*{Momentum}
+\begin{equation}
+\partial_t\vec{m_1} + \nabla \cdot \left(\frac{1}{h_1}\vec{m_1}\vec{m_1}\right) + \frac{1}{Ro}\left(\hat{k}\times \vec{m_1}\right) = -\frac{1}{Fr^2} h_1\nabla\left(h_1 + h_2\right) -\frac{\vec{m_1}}{h_1} \left( \beta \frac{\hat{Q}}{H}\hat{P}(Q) - \frac{T}{T_{RC}}(h_2-h_1)\HH{(h_2-h_1)}\right)+ \kappa \nabla ^2 \vec{m_1}
+\label{NDMom1}
+\end{equation}
+
+\begin{equation}
+\partial_t\vec{m_2} + \nabla \cdot \left(\frac{1}{h_2}\vec{m_2}\vec{m_2}\right) + \frac{1}{Ro}\left(\hat{k}\times \vec{m_2}\right) = -\frac{1}{Fr^2}h_1\nabla\left(h_1 + \alpha h_2\right)  +\frac{\vec{m_1}}{h_1} \left( \beta \frac{\hat{Q}}{H}\hat{P}(Q) - \frac{T}{T_{RC}}(h_2-h_1)\HH{(h_2-h_1)}\right) + \kappa \nabla ^2 \vec{m_2}
+\label{NDMom2}
+\end{equation}
+
+\subsubsection*{Height/Mass}
+
+\begin{equation}
+\partial_{t}h_1 + \nabla \cdot (\vec{u_1}h_1) = -\left(\beta\frac{\hat{Q}}{H}\hat{P}(Q)-\frac{T}{T_{RC}}(h_2-h_1)\HH(h_2-h_1)\right) + \kappa \nabla ^2 h_1
+\label{NDHei1}
+\end{equation}
+\begin{equation}
+\partial_{t}h_2 + \nabla \cdot (\vec{u_2}h_2) = \left(\beta\frac{\hat{Q}}{H}\hat{P}(Q)-\frac{T}{T_{RC}}(h_2-h_1)\HH(h_2-h_1)\right) + \kappa \nabla ^2 h_2
+\label{NDHei2}
+\end{equation}
+
+\subsubsection*{Moisture}
+\begin{equation}
+\partial_{t} Q + \nabla \cdot (\vec{u_1}Q) = \left(-1+\frac{1}{\epsilon}\right) \hat{P}(Q) + \kappa \nabla ^2 q
+\label{NDMoi}
+\end{equation}
+\subsection*{Nondimensionalization Constants and Parameters}
+
+\subsubsection*{Nondimensionalization Constants}
+\begin{center}
+	\begin{tabular}{ |c|c| } 
+		\hline
+		$\hat{L}$ & $10^6$ m \\ \hline
+		$H$ & $5000$ m \\ \hline
+		$U$ & $5$ ms$^{-1}$ \\ \hline
+		$T = \frac{L}{U}$ &$2 \times 10^5 $s \\ \hline
+		$\hat{Q}$ & $50$ mm = $0.05$ m \\ \hline
+		$T_{RC}$ & $16$ days = $1,382,400$ s \\ \hline
+	\end{tabular}
+\end{center}
+
+We approximate the Coriolis parameter $f= 2 \Omega \sin(\phi)$, where $\phi$ represents the latitude ($^{\circ}$ north or south from the equator). The arclength is our $y \Rightarrow r\phi = y \Rightarrow \phi = \frac{y}{RE}$, where $RE$ is the radius of the Earth. 
+
+$\sin(\frac{y}{r})\approx \frac{y}{r} = \hat{L} \frac{y}{r}$, where the second $y$ is the new $y$, and $\Omega$ is the angular velocity of Earth's rotation. That is, $\frac{2\pi}{day}$. So, 
+\begin{equation*}
+f = 2\Omega \sin(\phi )\approx 2 \times \frac{2\pi}{\text{day in s}} \hat{L}\phi = \frac{4\pi}{3600\times 24 s} \hat{L} \phi = \frac{4\pi}{3600\times 24 s} \hat{L} \frac{y}{RE}
+\end{equation*}
+
+\begin{align*}
+\frac{1}{Ro} = Tf & \approx \frac{2\times 10^5 s \times 4\pi \hat{L}}{24 \times 3600s} \phi = \frac{10^3 \times \pi \hat{L}}{3 \times 36} \phi \approx 2.909 \times 10^7 \text{m}  \phi \\
+&\approx \frac{2\times 10^5 s \times 4\pi \hat{L}}{24 \times 3600s} \frac{y}{6371000\text{m}} = \frac{10^3 \times \pi \times 10^6 \text{m}}{3 \times 36} \frac{y}{6371000\text{m}} \approx 4.57 y
+\end{align*}
+
+\begin{equation}
+\frac{1}{Fr^2} = \frac{gH}{U^2} \frac{ms^{-2}m}{(ms^{-1})^2} \approx 1960
+\end{equation}
+
+\subsubsection*{Parameters}
+
+
+
+We desire units in terms of: seconds, meters, and kilograms. Note that for water:
+\begin{align*}
+\frac{kg}{m^2} &= \frac{L}{m^2} = \frac{1000 mL}{m^2}\\
+&= \frac{1000 cm^3}{ (100cm)^2} = \frac{1}{10} cm = 1 mm = 0.001 m 
+\end{align*}
+
+We also approximate $\alpha = \frac{\theta_2}{\theta_1}$ via the relation $\sqrt{g'H} = \sqrt{g(\alpha -1) H} \approx 30 $m$s^{-1}$ (speed of Kelvin wave).
+
+This yields $\alpha \approx 1+\frac{900}{5000g} \approx 1.02$.
+
+
+\begin{center}
+	\begin{tabular}{ |c|c| } 
+		\hline
+		$g$  & $9.80665 m/s^2$ \\  \hline
+		$\alpha$  & $\frac{\theta_2}{\theta_1}\approx 1.02$ \\ \hline
+		$\beta$ &  $\approx 750$ \\ \hline
+		$\epsilon$ &   $\delta \frac{Q}{Qs}$ \\ \hline
+		$\delta$ & $ \approx 1.1$  \\ \hline
+		$b$& $ \approx 11.4$\\ \hline
+		radius of earth & $6,371,000$ m \\ \hline
+		$P$ (kg m$^{-2}$day$^{-1}$ = mm/day)& $a(t)(e^{b\frac{Q}{Qs}}-1)$ \\ 
+		$a(t)\approx $P$_{av}$ &= $8$ mm/day = $\frac{8}{86,400,000}$m s$^{-1}$ \\
+		$P$ (m s$^{-1}$) &=  $\frac{8}{86,400,000}(e^{b\frac{Q}{Qs}}-1)$ \\  \hline
+	\end{tabular}
+\end{center}
+
+\subsection*{Precipitation Nondimensionalization}
+We will write the relationship between the dimensional and nondimensional precipitation functions as: $P(\hat{Q}K) = \frac{\hat{Q}}{T}\hat{P}(K)$.
+I will show derivations of the nondimensional precipitation functions for the Betts-Miller Parametrization and the model proposed by Craig and Mack in (Cite).
+
+\subsubsection*{Betts-Miller Parametrization Nondimensionalization }
+
+We start with :
+\begin{equation*}
+P(Q) = \frac{Q-Q_s}{\tau_q}\HH{(Q-Qs)}
+\end{equation*}
+where $\HH(\cdot)$ denotes the heaviside function. 
+
+Inserting the change of variables $Q = \hat{Q}K$ yields:
+\begin{align*}
+P(\hat{Q}K) &= \frac{\hat{Q}(K-K_s)}{\tau_q} \HH{(\hat{Q}(K-K_s))}\\
+&= \frac{\hat{Q}}{T} \hat{P}(K)\\
+\hat{P}(K) &:= \frac{T}{\tau_q}(K-K_s)\HH{(K-K_s)}
+\end{align*}
+
+
+\subsubsection*{Craig and Mack Precipitation Model Nondimensionalization}
+
+The precipitation model is the following:
+\begin{equation}
+P(Q) = a(t)\left(\exp(b\frac{Q}{Qs})-1\right),
+\end{equation}
+where 
+\begin{equation}
+a(t) = \frac{P_{ave}}{\frac{1}{A}\int \left( \exp(b\frac{Q}{Qs})-1 \right)\rmd A}
+\end{equation}
+
+This $a(t)$ is used to enforce a constant total amount of precipitation over the area at each time-step. We disregard this, and simply replace $a(t)$ with $P_{ave}$ divided by some large number $PP$ such as 15,000. The quantity $8$ kg m$^{-2}$ day$^{-1}$ is a reasonable estimate for $P_{ave}$ in radiative-convective equilibrium(C\&M).
+Recall that kg m$^{-2}$ day$^{-1}$ = mm day$^{-1}$ = $\frac{1}{86,400,000}$ m s$^{-1}$. 
+
+\begin{align*}
+\hat{Q} &= 0.05 \text{m} \\
+T &= \frac{\hat{L}}{U} = \frac{10^6\text{m}}{5\text{ms}^{-1}} = 2 \times 10^{5} \text{s}\\
+P(\hat{Q}K) &= a(t)\left(\exp(b\frac{\hat{Q}K}{\hat{Q}K_s})-1\right)\text{ms}^{-1}\\
+&\approx \frac{P_{ave}}{PP} \left(\exp(b\frac{K}{K_s})-1\right) \\
+&=\frac{8}{86,400,000 \times PP}\left(\exp(b\frac{K}{K_s})-1\right) \text{ms}^{-1} \\
+&= \frac{\hat{Q}}{T \times PP}\hat{P}(K) \\
+\hat{P}(K) &:= \frac{8 \text{m}\div \hat{Q}}{86,400,000 \text{s}\div T \times PP}\left(\exp(b\frac{K}{K_s})-1\right) \\
+&= \frac{10}{27\times PP }\left(\exp(b\frac{K}{K_s})-1\right)\text{, \quad for our specified nondimensional constants.}
+\end{align*}
+
+\section*{Grid, Discretizations, and Boundary Conditions}
+\subsection*{Grid}
+We are using the A-Grid where all of the dependent variables live on the same grids. 
+\begin{itemize}
+	\item Note that $q_{i,j}$ is represented by $q[j,i]$ in my code.
+	\item I am using $m$ to denote the zonal component of momentum, and $n$ to denote the meridional component of momentum. That is, $\vec{m_i} = (m_i,n_i)^{\top}$ for $i=1,2$.
+	\item RE is the radius of earth. ($\approx 6,371,000$)
+	\item We convert latitudes/longitudes( in $^{\circ}$(degrees)) to distances in meters by multiplying by $\frac{\pi}{180}\times$RE. As a result, $\delta_x = 0.25 \times \frac{\pi}{180} \times $RE.
+	\item $j$ ranges from $1$ to $160$. $y[1] = -19.875\times \frac{\pi}{180} \times $RE, and $y[160] = 19.875 \times \frac{\pi}{180} \times $RE. As a result, $\delta_y = 0.25 \times \frac{\pi}{180} \times $RE.
+	\item We nondimensionalize by dividing by $\hat{L}$.
+\end{itemize}
+
+\subsection*{Discretizations}
+
+$$
+\nabla \cdot \left(\frac{1}{h}\vec{m}\vec{m}\right)
+= 
+\left([\partial_x \quad \partial_y]\begin{bmatrix}
+\frac{1}{h}mm & \frac{1}{h}mn \\
+\frac{1}{h}nm & \frac{1}{h}nn
+\end{bmatrix}^{\top}\right)^{\top}
+=
+\begin{bmatrix}
+\partial_x \left(\frac{1}{h}m^2\right) + \partial_y \left(\frac{1}{h}mn\right)
+\\
+\partial_x \left(\frac{1}{h}nm\right) + \partial_y \left(\frac{1}{h}n^2\right)
+\end{bmatrix}
+=
+\begin{bmatrix}
+\partial_x \left(um\right) + \partial_y \left(vm\right)
+\\
+\partial_x \left(un\right) + \partial_y \left(vn\right)
+\end{bmatrix}
+$$
+
+\begin{align*}
+\text{Term} & \quad \text{Discretization}\\ \hline
+\partial_x (uq)  & \quad \approx \frac{1}{4*\delta_x}\left[\left(u_{i,j}+u_{i+1,j}\right)\left(q_{i,j}+q_{i+1,j}\right)-\left(u_{i-1,j}+u_{i,j}\right)\left(q_{i-1,j}+q_{i,j}\right)\right]\\
+\partial_y (vq) & \quad \approx \frac{1}{4*\delta_y}\left[\left(v_{i,j}+v_{i,j+1}\right)\left(q_{i,j}+q_{i,j+1}\right)-\left(v_{i,j-1}+v_{i,j}\right)\left(q_{i,j-1}+q_{i,j}\right)\right] \\
+\partial_x (v^2) & \quad \approx \frac{1}{4*\delta_x}\left[v_{i+1,j}^2+2v_{i,j}\left(v_{i+1,j}-v_{i-1,j}\right)-v_{i-1,j}^2\right] \\
+\partial_y (v^2) & \quad \approx  \frac{1}{4*\delta_x}\left[v_{i,j+1}^2+2v_{i,j}\left(v_{i,j+1}-v_{i,j-1}\right)-v_{i,j-1}^2\right] \\
+\nabla ^2 q & \quad \approx \frac{1}{\delta_x^2}\left(q_{j,i+1}-2q_{j,i}+q_{j,i-1}\right) + \frac{1}{\delta_y^2}\left(q_{j+1,i}-2q_{j,i}+q_{j-1,i}\right)
+\end{align*}
+
+\subsection*{Boundary Conditions}
+
+Note that we only approach the y-boundaries for the terms that include $\partial_y (quantity)$. Recall that I have denoted $\vec{m_i} = (m_i, n_i)^{\top}$.
+\begin{itemize}
+	\item Recall that $jj$ ranges from $1$ to $160$., and $jj=1$ represents latitude $-19.875 ^{\circ}$, and $jj=160$ represents latitude $19.875 ^{\circ}$. With the convention that the increment of $jj$ by $1$ increases the latitude by $0.25 ^{\circ}$, the boundaries at $\pm 20 ^{\circ}$ are at $jj = 0.5$ and $jj = 160.5$  
+	\item (???) We assume that meridional momentum is conserved, and enforce this by setting the meridional momentums $n_i \equiv 0$ at the boundaries, $\pm 20 ^{\circ}$ ($jj = 0.5, 160.5$). In other words, we set $n_i["0.5", ii] = n_i["160.5", ii] = 0$. This appears whenever we have $\partial_y$ of a term that has $n_1$ or $n_2$ in it. 
+\end{itemize}
+
+For all other variables, we just use a first-order (forward or backward)FD for now, keeping in mind that we can force a one-sided second-rder FD later on.
+\begin{itemize}
+	\item - Forward (order 1):  $\partial_y (q(x,y)) |_{y = -19.875 \Rightarrow j = 1} \approx \frac{1}{\delta_y}$ (q[2]-q[1])
+	\item Forward (order 2):  $\partial_y (q(x,y)) |_{y = -19.875 \Rightarrow j = 1} \approx \frac{1}{2*\delta_y}$ (-q[3]+4q[2]-3q[1])
+	\item Backward (order 1):  $\partial_y (q(x,y)) |_{y = 19.875 \Rightarrow j = 160} \approx \frac{1}{2*\delta_y}$ (q[160]-q[159])
+	\item Backward (order 2):  $\partial_y (q(x,y)) |_{y = 19.875 \Rightarrow j = 160} \approx \frac{1}{\delta_y}$ (3q[160]-4q[159]+q[158])
+	
+\end{itemize}
+
+
+
+
+\end{document}
