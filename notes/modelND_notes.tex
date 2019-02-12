@@ -1,0 +1,164 @@
+\documentclass[10pt]{article}
+\usepackage{amsmath,amssymb,amsfonts,amsthm,bm}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{color}
+%\usepackage{ulem}
+
+\newcommand{\dd}[3]{\frac{\text{d}^{#3}{#1}}{\text{d}{#2}^{#3}}}
+\newcommand{\pd}[1]{\partial_{#1}}
+\newcommand{\ov}[1]{\overline{#1}}
+\newcommand{\bu}{\bm{u}}
+\newcommand{\bbu}{\ov{\bu}}
+\newcommand{\rmd}{\,\mathrm{d}}
+\newcommand{\rmD}{\,\mathrm{D}}
+\newcommand{\HH}{\mathcal{H}}
+\renewcommand{\arraystretch}{2}
+\title{Research Notes}
+\author{Minah Yang}
+\date{\today}
+\begin{document}
+\maketitle
+\section*{Nondimensionalization}
+I will be using the following changes of variables. $i=1,2$ All of the first letters on the RHS are the constants, and the second letters are variables. 
+\begin{align}
+\vec{u}_i &= U \vec{\xi}_i\\
+h_i &= H \zeta_i\\
+Q &= \hat{Q} K \\
+x &= \hat{L}X \\
+y &= \hat{L}Y \\
+t &= T \tau \\
+P(Q) &= P (\hat{Q}K)
+\end{align}
+ 
+ \begin{center}
+ 	\begin{tabular}{ |c|c| } 
+ 		\hline
+ 		$\hat{L}$ & $10^6$ m \\ \hline
+ 		$H$ & $5000$ m \\ \hline
+ 		$U$ & $5$ ms$^{-1}$ \\ \hline
+ 		$\hat{Q}$ & $50$ mm = $0.05$ m \\ \hline
+ 		$T_{RC}$ & $16$ days = $1,382,400$ s \\ \hline
+ 	\end{tabular}
+ \end{center}
+
+Setting $U=V$ and $T=\frac{\hat{L}}{U}$, allow us to have the material derivative in terms of all of the new variables. Rewriting all of the nondimensionalized equations in terms of the old variables gives us the following set of equations. In addition, we will write the relationship between the dimensional and nondimensional precipitation functions as: $P(\hat{Q}Q) = \frac{\hat{Q}}{T}\hat{P}(Q)$. 
+
+\subsubsection{Radiative Cooling}
+
+We formulate the radiative cooling function with the following:
+\begin{equation}
+\beta \frac{c_p}{L} RC = -\frac{h_2-h_1}{T_{RC}}\HH(h_2-h_1)
+\end{equation}
+where $H$ is the heaviside function. ??$\frac{c_p}{L}$ has the units of temperature. ?? The heaviside function ensure that only radiative cooling (and not heating!) occurs. That is, when the upper layer  is taller ($h_2 > h_1$), the whole term is negative. $T_{RC}$ is introduced to scale the cooling phenomena. We will approximate it to be $\approx 16$ days. With the nondimensionalized variables, we result in:
+\begin{equation}
+\beta \frac{c_p}{L} RC = -H\frac{h_2-h_1}{T_{RC}}\HH(h_2-h_1).
+\end{equation}
+
+
+Velocity equations:
+
+\begin{equation}
+\partial_{t} \vec{u_1} + (\vec{u_1}\cdot \nabla)\vec{u_1} + \frac{1}{Ro}(\hat{k}\times \vec{u_1}) = -\frac{1}{Fr^2}\nabla (h_1 +h_2)
+\label{NDVel1}
+\end{equation}
+\begin{equation}
+\partial_{t} \vec{u_2} + (\vec{u_2}\cdot \nabla)\vec{u_2} + \frac{1}{Ro}(\hat{k}\times \vec{u_2}) = -\frac{1}{Fr^2}\nabla (h_1 +\alpha h_2) +  \frac{\vec{u_1}-\vec{u_2}}{h_2}\left(\beta\frac{\hat{Q}}{H}\hat{P}(Q)-\frac{T}{T_{RC}}(h_2-h_1)\HH(h_2-h_1)\right)
+\label{NDVel2}
+\end{equation}
+, where we have:
+\begin{align*}
+Ro &= \frac{U}{\hat{L}f} \\ 
+Fr &= \frac{U}{\sqrt{gH}}
+\end{align*}
+
+Conservation of Mass (height):
+\begin{equation}
+\partial_{t}h_1 + \nabla \cdot (\vec{u_1}h_1) = -\left(\beta\frac{\hat{Q}}{H}\hat{P}(Q)-\frac{T}{T_{RC}}(h_2-h_1)\HH(h_2-h_1)\right)
+\label{NDHei1}
+\end{equation}
+\begin{equation}
+\partial_{t}h_2 + \nabla \cdot (\vec{u_2}h_2) = \left(\beta\frac{\hat{Q}}{H}\hat{P}(Q)-\frac{T}{T_{RC}}(h_2-h_1)\HH(h_2-h_1)\right)
+\label{NDHei2}
+\end{equation}
+
+Moisture Dynamics:
+
+\begin{equation}
+\partial_{t} Q + \nabla \cdot (\vec{u_1}Q) = \left(-1+\frac{1}{\epsilon}\right) \hat{P}(Q)
+\label{NDMoi}
+\end{equation}
+
+We will be using several different types of functions for precipitation. Details in the nondimensionalization of the precipitation functions are in a separate document.
+
+
+\subsubsection{Coriolis Parameter, Rossby, and Froude Numbers}
+
+We approximate Coriolis parameter $f= 2 \Omega \sin(\phi)$, where $\phi$ represents the latitude ($^{\circ}$ north or south from the equator). The arclength is our $y \Rightarrow r\phi = y \Rightarrow \phi = \frac{y}{r}$, where $r$ is the radius of the Earth. 
+
+$\sin(\frac{y}{r})\approx \frac{y}{r} = \hat{L} \frac{y}{r}$, where the second $y$ is the new $y$, and $\Omega$ is the angular velocity of Earth's rotation. That is, $\frac{2\pi}{day}$. So, 
+\begin{equation*}
+f \approx \frac{4\pi\hat{L}}{24*3600}\frac{y}{6371000}
+\end{equation*}
+
+\begin{equation*}
+\frac{1}{Ro} = Tf = \frac{\hat{L}f}{U} \approx \frac{4\pi \hat{L}^2}{24*3600*U*6371000} y =\frac{\bar{\beta}\hat{L}^2}{U} \approx 4.56 y
+\end{equation*}
+ where $\bar{\beta} = \frac{4\pi}{\text{(day)(radius of earth)}}$.
+
+\begin{equation}
+\frac{1}{Fr^2} = \frac{gH}{U^2} \frac{ms^{-2}m}{(ms^{-1})^2} \approx 1960
+\end{equation}
+
+\subsection{Parameter Values}
+
+
+
+We desire units in terms of: seconds, meters, and kilograms. Note that for water:
+\begin{align*}
+\frac{kg}{m^2} &= \frac{L}{m^2} = \frac{1000 mL}{m^2}\\
+&= \frac{1000 cm^3}{ (100cm)^2} = \frac{1}{10} cm = 1 mm = 0.001 m 
+\end{align*}
+
+We also approximate $\alpha = \frac{\theta_2}{\theta_1}$ via the relation $\sqrt{g'H} = \sqrt{g(\alpha -1) H} \approx 30 $m$s^{-1}$ (speed of Kelvin wave).
+
+This yields $\alpha \approx 1+\frac{900}{5000g} \approx 1.02$.
+
+
+\begin{center}
+	\begin{tabular}{ |c|c| } 
+		\hline
+		$g$  & $9.80665 m/s^2$ \\  \hline
+		$\alpha$  & $\frac{\theta_2}{\theta_1}\approx 1.02$ \\ \hline
+		$\beta$ &  $\approx 750$ \\ \hline
+		$\epsilon$ &   $\delta \frac{Q}{Qs}$ \\ \hline
+		$\delta$ & $ \approx 1.1$  \\ \hline
+		$b$& $ \approx 11.4$\\ \hline
+		radius of earth & $6,371,000$ m \\ \hline
+		$P$ (kg m$^{-2}$day$^{-1}$ = mm/day)& $a(e^{b\frac{Q}{Qs}}-1)$ \\ 
+		$P$ (m s$^{-1}$) &=  $\frac{a(t)}{86,400,000}(e^{b\frac{Q}{Qs}}-1)$\\
+		$\alpha$ in Craig and Mack & $5 * 10^{-6} s^{-1}$ \\ \hline
+		P$_{av}$ &= $8$ kg m$^{-2}$ day$^{-1}$ = $\frac{8}{86,400,000}$m s$^{-1}$ \\ \hline
+		$a(t)$  &= $\frac{P_{av}}{\frac{1}{A}\int (e^{b\frac{Q}{Qs}}-1)}$ \\ \hline
+	\end{tabular}
+\end{center}
+
+
+\subsection{Conversion into Momentum Flux-form equations (instead of velocity)}
+We multiply $h_1$ to  \ref{NDVel1}, $\vec{u_1}$ to \ref{NDHei1} and add them together, and repeat with the upper layer. Setting $\vec{m_1} = h_1\vec{u_1}$, and $m_2=h_2\vec{u_2}$ gives us:
+
+\begin{equation}
+\partial_t\vec{m_1} + \nabla \cdot \left(\frac{1}{h_1}\vec{m_1}\vec{m_1}\right) + \frac{1}{Ro}\left(\hat{k}\times \vec{m_1}\right) = -\frac{h_1}{Fr^2}\nabla\left(h_1 + h_2\right) -\frac{\vec{m_1}}{h_1} \left( \beta \frac{\hat{Q}}{H}\hat{P}(Q) - \frac{T}{T_{RC}}(h_2-h_1)\HH{(h_2-h_1)}\right)
+\end{equation}
+
+\begin{equation}
+\partial_t\vec{m_2} + \nabla \cdot \left(\frac{1}{h_2}\vec{m_2}\vec{m_2}\right) + \frac{1}{Ro}\left(\hat{k}\times \vec{m_2}\right) = -\frac{h_2}{Fr^2}\nabla\left( h_1 + \alpha h_2\right)  +\frac{\vec{m_1}}{h_1} \left( \beta \frac{\hat{Q}}{H}\hat{P}(Q) - \frac{T}{T_{RC}}(h_2-h_1)\HH{(h_2-h_1)}\right)
+\end{equation}
+
+Note that $\vec{a}\vec{a} = \vec{a}\vec{a}^{\top}$, and $\nabla\cdot (\vec{a}\vec{a}) = \nabla \cdot (\vec{a}\vec{a}^{\top}) = \left(\nabla^{\top}\vec{a}\vec{a}^{\top}\right)^{\top}$ (last tranpose used to result in a column vector.
+
+UPDATE: added diffusion terms to $q$, $h_1$, and $h_2$.
+
+
+\end{document}
