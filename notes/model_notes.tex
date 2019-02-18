@@ -58,7 +58,9 @@ CM13's `convective moistening' is a combination of both moistening and precipita
 Specifically their total moistening plus precipitation term has the form
 \[C = \frac{1-\epsilon}{\epsilon} P = -P +\frac{1}{\epsilon}P\]
 where $P/\epsilon$ is the moistening term and $\epsilon$ is a `precipitation efficiency.'
-They use $\epsilon = \hat{\beta}Q/Q_s$ where $Q_s$ is a saturation level and $\hat{\beta} = 1.1$.
+They use 
+\[\epsilon = \hat{\beta}Q/Q_s\]
+where $Q_s$ is a saturation level and $\hat{\beta} = 1.1$.
 We will add the CM13 moistening model to our equations so that the water doesn't all rain out.\\
 
 Another drawback to the BLLZ09 model (in terms of climatology) is that the $h$ tendency is uniformly non-positive (because precipitation is non-negative $P\ge0$).
@@ -154,7 +156,7 @@ Although we no longer have conservation of moist enthalpy, we can still compute 
 &= \int_{0}^{h} \partial_t me \rmd z + (\nabla \cdot \vec{u})\int_{0}^{h}  me \rmd z + \vec{u} \cdot \int_{0}^{h} \nabla me \rmd z + w(h)me(h) \\
 &= RC + \frac{L}{c_p} M \label{eq4}
 \end{align}
-
+{\bf Assuming $RC = \int_0^h rc$ and similar for $M$?}
 Combining \ref{eqdt} and \ref{eq4} results in:
 
 \begin{equation}
@@ -162,12 +164,14 @@ Combining \ref{eqdt} and \ref{eq4} results in:
 \end{equation}
 
 We deconstruct $ME$ into its components to get another relationship between $P$, $W$, and $RC$. 
+{\bf The above derivation doesn't really mention the fact that we have two layers\ldots}
 \begin{align*}
 \Delta \left(\int_{0}^{h}\theta \rmd z + \frac{L}{c_p}Q \right) &= -W me(h) + RC + \frac{L}{c_p} M \\
 \theta_1(-W) + \frac{L}{c_p}\Delta Q &=  -W me(h) + RC + \frac{L}{c_p} M \\
 W \left(me(h) - \theta_1 \right) &= RC + \frac{L}{c_p} M  - \frac{L}{c_p}\Delta Q\\
 \Delta Q &=\frac{c_p}{L} \left(W \left(\theta_1 - me(h) \right) + RC + \frac{L}{c_p} M  \right)
 \end{align*}
+{\bf Although Lambaerts et al.~use the symbol $\beta$ here, we shouldn't because the symbol universally means $\beta = (2\Omega/R_E)$ where $\Omega$ is the rotation rate of the Earth (radians per time) and $R_E$ is the radius of the Earth.}
 
 Fitting this with our assumption from before (\ref{neweq}) and the choice of a ``dry'' stable stratification of the atmosphere we result in:
 
@@ -233,7 +237,7 @@ We formulate the radiative cooling function with the following:
 \begin{equation}
 \beta \frac{c_p}{L} RC = -\frac{h_2-h_1}{T_{RC}}\HH(h_2-h_1)
 \end{equation}
-where $H$ is the heaviside function.{\color{blue}$\frac{c_p}{L}$ has the units of temperature.} The heaviside function ensure that only radiative cooling (and not heating!) occurs. 
+where $\HH$ is the Heaviside function.{\color{blue}$\frac{c_p}{L}$ has the units of temperature.} {\bf to balance the units of $RC$ which are temperature times length per time.} The Heaviside function ensure that only radiative cooling (and not heating!) occurs. 
 That is, when the upper layer  is taller ($h_2 > h_1$), the whole term is negative. 
 $T_{RC}$ is introduced to scale the cooling phenomena. 
 We will approximate it to be $\approx 16$ days. 
@@ -242,12 +246,13 @@ We will approximate it to be $\approx 16$ days.
 	\beta \frac{c_p}{L} RC = -H\frac{h_2-h_1}{T_{RC}}\HH(h_2-h_1).
 	\end{equation}
 }
+
 \subsection{Betts-Miller}
 In this model, rain rate is given by some proportion ($\tau_q$) of the amount of moisture above some saturation level ($Q_s$).
 \begin{equation*}
 P(Q) = \frac{Q-Q_s}{\tau_q}\HH{(Q-Qs)},
 \end{equation*}
-where $\HH(\cdot)$ denotes the heaviside function. 
+where $\HH(\cdot)$ denotes the Heaviside function. 
 
 \subsection{Craig \& Mack \citep{CM2013}}
 The precipitation model is the following:
@@ -259,8 +264,9 @@ where
 a(t) = \frac{P_{ave}}{\frac{1}{A}\int \left( \exp(b\frac{Q}{Qs})-1 \right)\rmd A}
 \end{equation}
 
-This $a(t)$ is used to enforce a constant total amount of precipitation over the area at each time-step. 
+This $a(t)$ is used by Craig \& Mack to enforce a constant total amount of precipitation over the area at each time-step. 
 {\color{blue} We disregard this, and simply replace $a(t)$ with $P_{ave}$ divided by some large number $PP$ such as 15,000.}
+{\bf This sounds horrific. There was a principled reason for dividing by 15,000.} 
 The quantity $8$ kg m$^{-2}$ day$^{-1}$ is a reasonable estimate for $P_{ave}$ in radiative-convective equilibrium.
 Recall that kg m$^{-2}$ day$^{-1}$ = mm day$^{-1}$ = $\frac{1}{86,400,000}$ m s$^{-1}$. 
 \subsubsection{Parameters}
@@ -273,7 +279,26 @@ Recall that kg m$^{-2}$ day$^{-1}$ = mm day$^{-1}$ = $\frac{1}{86,400,000}$ m s$
 	\end{tabular}
 \end{center}
 
+\subsection{MJO Skeleton}
+The MJO skeleton model of Majda \& Stechmann (PNAS 2009) has an unusual model for precipitation.
+Their model is linear and involves deviations from a background state, so it's not obvious how to reconstruct a full precipitation model.
+In their linear model the precipitation rate is proportional to `wave activity' $a$, and the time-tendency of wave activity is proportional to moisture anomalies.
+A simple way to achieve this is to replace $a$ by $P$ (since they are related by a proportionality constant), and to use the model
+\[\dot{P} = \frac{P_0-P}{\tau_{MS09}}\]
+where $P_0$ is one of our other models for $P$ (e.g. Betts-Miller), and
+where $\tau_{MS09}$ is a time scale that measures the rate at which precipitation responds to moisture anomalies.
+The above model ensures that $P$ never becomes negative (as long as the initial condition is positive), and adds some memory to the precipitation model.
+Appropriate values for $\tau_{MS09}$ are very unclear, but we know that as $\tau_{MS09}\to0$ the model loses its memory and becomes $P=P_0$.
+We should probably vary it and see what happens as it becomes larger than or smaller than the other time scales in the system.
+
+The above model should be applied in a Lagrangian sense, yielding
+\[\Delta P = \frac{P_0-P}{\tau_{MS09}}.\]
+If the velocity was nondivergent this would avoid situations where $P$ is large enough to cause negative $Q$ (at least in the absence of noise and numerical errors).
+As it stands, it's not clear if this formulation will avoid negative $Q$.
+
 \subsection{Hottovy and Stechman}
+{\bf I think the HS JAS paper just uses Betts-Miller?} 
+ 
 \subsection{Stochastic precipitation models with memory}
 
 
