@@ -72,7 +72,7 @@ A very simple way of adding this is as a linear restoring that is only active wh
 Adding convective moistening and radiative cooling to the BLLZ09 model results in the following
 \begin{align}
 \partial_t \vec{v} + \left( \vec{v}\cdot \nabla \right)\vec{v} &= -g\nabla h - f\hat{z}\times \vec{v}\\
-\partial_t h + \nabla \cdot \left(\vec{v}h\right) &= -\gamma P -\frac{(h-h_0)}{\tau}H(h_0-h)\\
+\partial_t h + \nabla \cdot \left(\vec{v}h\right) &= -\gamma P -\frac{(h-h_0)}{T_{RC}}H(h_0-h)\\
 \partial_t Q + \nabla \cdot \left(\vec{v}Q\right) &= -P + \frac{1}{\epsilon}P.
 \end{align}
 
@@ -83,12 +83,12 @@ Our upgraded BLLZ09 model is therefore
 
 \begin{align}
 \partial_t \vec{v} + \left( \vec{v}\cdot \nabla \right)\vec{v} &= -g\nabla h - f\hat{z}\times \vec{v}\\
-\partial_t h + \nabla \cdot \left(\vec{v}h\right) &= -\gamma P -\frac{(h-h_0)}{\tau}H(h_0-h)\\
+\partial_t h + \nabla \cdot \left(\vec{v}h\right) &= -\gamma P -\frac{(h-h_0)}{T_{RC}}H(h_0-h)\\
 \partial_t Q + \nabla \cdot \left(\vec{v}Q\right) &= -P + \frac{1}{\epsilon}P + \sigma_Q \tanh(3Q)\dot{W}_Q.
 \end{align}
 The term $\dot{W}_Q$ represents Gaussian white noise in time and space. 
 We should really assume that this is Stratonovich rather than Ito; on the other hand we're not trying to make a careful model of a physical process, so it's fine to just assume it's Ito.
-Also we might want to replace the white noise by red noise (time-correlated) with a non-Gaussian distribution following the work of Penland and Sardeshmukh; this wouldn't change the spectrum in Hottovy \& Stechmann's linear model, but it could definite change our behavior.
+%Also we might want to replace the white noise by red noise (time-correlated) with a non-Gaussian distribution following the work of Penland and Sardeshmukh; this wouldn't change the spectrum in Hottovy \& Stechmann's linear model, but it could definitely change our behavior. Actually not sure the Penland & Sardeshmukh model is useful here.
 
 \subsection{Two-layer, $Q_2 = 0$, no subsidence drying}
 
@@ -200,7 +200,7 @@ Moisture Dynamics:
 
 \begin{align}
 \Delta Q &= -P + M\\
-&= \left(-1 + \frac{1}{\epsilon} \right)P
+&= \left(-1 + \frac{1}{\epsilon} \right)P+ \text{ noise}
 \label{eqn:DMoi}
 \end{align}
 
@@ -264,7 +264,7 @@ a(t) = \frac{P_{ave}}{\frac{1}{A}\int \left( \exp(b\frac{Q}{Qs})-1 \right)\rmd A
 
 This $a(t)$ is used by Craig \& Mack to enforce a constant total amount of precipitation over the area at each time-step. 
 {\color{blue} We disregard this, and simply replace $a(t)$ with $P_{ave}$ divided by some large number $PP$ such as 15,000.}
-{\bf This sounds horrific. There was a principled reason for dividing by 15,000.} 
+{\bf This sounds horrific. There is a principled reason for dividing by 15,000.} 
 The quantity $8$ kg m$^{-2}$ day$^{-1}$ is a reasonable estimate for $P_{ave}$ in radiative-convective equilibrium.
 Recall that kg m$^{-2}$ day$^{-1}$ = mm day$^{-1}$ = $\frac{1}{86,400,000}$ m s$^{-1}$. 
 \subsubsection{Parameters}
@@ -295,8 +295,15 @@ If the velocity was nondivergent this would avoid situations where $P$ is large 
 As it stands, it's not clear if this formulation will avoid negative $Q$.
 
 \subsection{Hottovy and Stechman}
-{\bf I think the HS JAS paper just uses Betts-Miller?} 
- 
+In a 2015 SJAM paper Hottovy \& Stechmann analyze four models for precipitation and moistening at a point (no horizontal extent; `single column').
+Precipitation and moistening are modeled as exponential growth and decay, respectively.
+Their models switch between precipitation and moistening either deterministically or stochastically.
+The simplest model switches deterministically between moistening and precipitation when $Q$ crosses a threshold $Q_c$.
+The other deterministic model has hysteresis: the model switches from moistening to precipitation as $Q$ increases past $Q_c$, and it switches from precipitation to moistening as $Q$ decreases past $Q_{np}$.
+In the stochastic models the switch is not instantaneous; instead, the time it takes to switch after $Q$ crosses a threshold is an exponentially-distributed random variable.
+The models with hysteresis have `memory.'
+I'm not sure if we need to try to do something like this; the skeleton model has memory too and is far easier to implement.
+
 \subsection{Stochastic precipitation models with memory}
 
 
