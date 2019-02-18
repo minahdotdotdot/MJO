@@ -41,29 +41,54 @@ Note that $\frac{\rmd}{\rmd t}$ is equivalent to the standard 3-D Lagrangian der
 &= \partial_t a + (\nabla \cdot \vec{u}) a + \vec{u} \cdot \nabla a + (\partial_z w)a + w \partial_z a  \text{,\quad (Product Rule)}\\
 &= (\partial_t  +\vec{u} \cdot \nabla  +w \partial_z) a
 \end{align*}
-\subsection{Single-Layer Model}
-I looked at the Bouchut-Laembert paper for the single-layer equations.
+\subsection{Single-Layer Models}
+I looked at the Bouchut et al (2009) paper for the single-layer equations.
 \begin{align}
 \partial_t \vec{v} + \left( \vec{v}\cdot \nabla \right)\vec{v} &= -g\nabla h - f\hat{z}\times \vec{v}\\
-\partial_t h + \nabla \cdot \left(\vec{v}h\right) &= -\gamma P = -\frac{(h-h_0)}{\tau}H(h_0-h)\\
-\partial_t Q + \nabla \cdot \left(\vec{v}Q\right) &= ?? \label{eq3}
+\partial_t h + \nabla \cdot \left(\vec{v}h\right) &= -\gamma P \\%= -\frac{(h-h_0)}{\tau}H(h_0-h)\\
+\partial_t Q + \nabla \cdot \left(\vec{v}Q\right) &= -P. \label{eq3}
+\end{align}
+The BLLZ09 model doesn't have an interesting climatology because there is no moisture source; either the water will all rain out or $Q$ will become so small that there is no longer any precipitation to drive the dry dynamics.
+(The $-\gamma P$ term is a model of convective heating, not radiative cooling.) 
+
+Craig and Mack suggest a model where the change in moisture (CWV) with respect to time is dependent on three physical phenomena: subsidence drying, convective moistening, and horizontal transport
+\[\partial_t Q + \nabla \cdot \left(\vec{v}Q\right) = S + C + T.\]
+Their `subsidence drying' $S$ doesn't really fit within the BLLZ09 framework, and we already have horizontal transport via the $\nabla\cdot(\vec{v}Q)$ term.
+CM13's `convective moistening' is a combination of both moistening and precipitation.
+Specifically their total moistening plus precipitation term has the form
+\[C = \frac{1-\epsilon}{\epsilon} P = -P +\frac{1}{\epsilon}P\]
+where $P/\epsilon$ is the moistening term and $\epsilon$ is a `precipitation efficiency.'
+They use $\epsilon = \hat{\beta}Q/Q_s$ where $Q_s$ is a saturation level and $\hat{\beta} = 1.1$.
+We will add the CM13 moistening model to our equations so that the water doesn't all rain out.\\
+
+Another drawback to the BLLZ09 model (in terms of climatology) is that the $h$ tendency is uniformly non-positive (because precipitation is non-negative $P\ge0$).
+If we add a moistening term so that $P$ doesn't eventually go to zero, the $h$ can only decrease.
+In reality there should be a balance between convective heating and radiative cooling (radiative-convective equilibrium; RCE).
+To enable this kind of balance we need to add radiative cooling to the one-layer model.
+A very simple way of adding this is as a linear restoring that is only active when $h$ falls below some threshold $h_0$ (the on/off behavior means that the term isn't completely linear).
+
+Adding convective moistening and radiative cooling to the BLLZ09 model results in the following
+\begin{align}
+\partial_t \vec{v} + \left( \vec{v}\cdot \nabla \right)\vec{v} &= -g\nabla h - f\hat{z}\times \vec{v}\\
+\partial_t h + \nabla \cdot \left(\vec{v}h\right) &= -\gamma P -\frac{(h-h_0)}{\tau}H(h_0-h)\\
+\partial_t Q + \nabla \cdot \left(\vec{v}Q\right) &= -P + \frac{1}{\epsilon}P.
 \end{align}
 
-Craig and Mack suggest a model where the change in moisture (CWV) with respect to time is dependent on three physical phenomena: subsidence drying, convective moistening, and horizontal transport (diffusive?). 
+Hottovy \& Stechmann showed that a very simple moisture/water equation can reproduce the observed background variability.
+Their model included only diffusion, moistening, and precipitation, but they needed a stochastic term to represent fine-scale moistening or convective processes.
+We will also add a similar term, but we want to avoid having the stochastic forcing generate negative $Q$ values, so we will make it multiplicative (cf geometric brownian motion).
+Our upgraded BLLZ09 model is therefore
 
 \begin{align}
-\partial_t Q + \nabla \cdot \left(\vec{v}Q\right) &= S + C + T\\
-S &= -\alpha Q \\
-C &= \frac{1-\epsilon}{\epsilon} P \\
-T &= K \nabla^2 Q\\
-P &= a \left(\exp(b\frac{Q}{Q_s}) -1\right)\\
-\epsilon &= \hat{\beta} \frac{Q}{Q_s}
+\partial_t \vec{v} + \left( \vec{v}\cdot \nabla \right)\vec{v} &= -g\nabla h - f\hat{z}\times \vec{v}\\
+\partial_t h + \nabla \cdot \left(\vec{v}h\right) &= -\gamma P -\frac{(h-h_0)}{\tau}H(h_0-h)\\
+\partial_t Q + \nabla \cdot \left(\vec{v}Q\right) &= -P + \frac{1}{\epsilon}P + \sigma_Q \tanh(3Q)\dot{W}_Q.
 \end{align}
-The standard values for some of these parameters are as follows: $\hat{\beta} \approx 1.1$, $b \approx 11.4$. Details on the rest can be found in the Craig and Mack paper.
-
-\begin{itemize}
-	\item Radiative cooling appears in this model as $\gamma P$ (layer height equation).
-\end{itemize}
+The term $\dot{W}_Q$ represents Gaussian white noise in time and space. 
+We should really assume that this is Stratonovich rather than Ito.
+Hottovy \& Stechmann's model used additive noise, so it didn't matter; here we are using multiplicative noise so it does matter.
+We'll probably have to think about this a bit more.
+Also we might want to replace the white noise by red noise (time-correlated) with a non-Gaussian distribution following the work of Penland and Sardeshmukh; this wouldn't change the spectrum in Hottovy \& Stechmann's linear model, but it could definite change our behavior.
 
 \subsection{Two-layer, $Q_2 = 0$, no subsidence drying}
 
