@@ -87,9 +87,7 @@ Our upgraded BLLZ09 model is therefore
 \partial_t Q + \nabla \cdot \left(\vec{v}Q\right) &= -P + \frac{1}{\epsilon}P + \sigma_Q \tanh(3Q)\dot{W}_Q.
 \end{align}
 The term $\dot{W}_Q$ represents Gaussian white noise in time and space. 
-We should really assume that this is Stratonovich rather than Ito.
-Hottovy \& Stechmann's model used additive noise, so it didn't matter; here we are using multiplicative noise so it does matter.
-We'll probably have to think about this a bit more.
+We should really assume that this is Stratonovich rather than Ito; on the other hand we're not trying to make a careful model of a physical process, so it's fine to just assume it's Ito.
 Also we might want to replace the white noise by red noise (time-correlated) with a non-Gaussian distribution following the work of Penland and Sardeshmukh; this wouldn't change the spectrum in Hottovy \& Stechmann's linear model, but it could definite change our behavior.
 
 \subsection{Two-layer, $Q_2 = 0$, no subsidence drying}
