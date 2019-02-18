@@ -2,8 +2,9 @@
 \usepackage{amsmath,amssymb,amsfonts,amsthm,bm}
 \usepackage[margin=1in]{geometry}
 \usepackage{graphicx}
-\usepackage{hyperref}
-\usepackage{color}
+%\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage[sort&compress, numbers]{natbib}
 %\usepackage{ulem}
 
 \newcommand{\dd}[3]{\frac{\text{d}^{#3}{#1}}{\text{d}{#2}^{#3}}}
@@ -21,6 +22,25 @@
 \begin{document}
 \maketitle
 \section{Basic Models}
+\subsection{Notation}
+Define the following operators for some quantity, $a$.
+\begin{align*}
+\frac{\rmd}{\rmd t} a &= \partial_t a + \nabla \cdot \left(\vec{u}a\right) + \partial_z (wa)\\
+\Delta a &= \partial_t a + \nabla \cdot \left(\vec{u}a\right)
+\end{align*}
+where $\vec{u} = (u,v)$, just the horizontal components of velocity.
+Note that $\frac{\rmd}{\rmd t}$ is equivalent to the standard 3-D Lagrangian derivative as a result of  incompressibility: 
+
+\begin{equation}
+\nabla \cdot \vec{u} +\partial_z w= 0
+\label{incoma}
+\end{equation}
+
+\begin{align*}
+\frac{\rmd}{\rmd t} a &= \partial_t a + \nabla \cdot \left(\vec{u}a\right) + \partial_z (wa)\\
+&= \partial_t a + (\nabla \cdot \vec{u}) a + \vec{u} \cdot \nabla a + (\partial_z w)a + w \partial_z a  \text{,\quad (Product Rule)}\\
+&= (\partial_t  +\vec{u} \cdot \nabla  +w \partial_z) a
+\end{align*}
 \subsection{Single-Layer Model}
 I looked at the Bouchut-Laembert paper for the single-layer equations.
 \begin{align}
@@ -46,33 +66,45 @@ The standard values for some of these parameters are as follows: $\hat{\beta} \a
 \end{itemize}
 
 \subsection{Two-layer, $Q_2 = 0$, no subsidence drying}
-Consider writing the convective moistening term into two parts: precipitation, and the resulting moistening. Let $m$ represent moistening.
-We have $c = -p + m$. Following Craig \& Mack's example yields: 
+
+
+We will represent convective moistening (and drying) with two mechanisms: precipitation and moistening from detrainment.
+Precipitation, $p$, removes moisture as water vapors condense to water droplets and drop to the surface.
+Moistening via detrainment, $m$, happens at the top of clouds, and we assume its relationship to precipitation as in Equation \ref{eqn:conv_moist}.
+Following \citet{CM2013}, we formulate convective moistening with a combination of precipitation and detrainment moistening.
 \begin{equation}
-c = \frac{1-\epsilon}{\epsilon} p = -p + \frac{1}{\epsilon}p
+c = \frac{1-\epsilon}{\epsilon} p = -p + \frac{1}{\epsilon}p = -p + m
+\label{eqn:conv_moist}
 \end{equation}
-The negative sign on the $p$ makes sense since we will be losing mosture. So we get:
+The negative sign on the $p$ is analogous to losing moisture, and moistening proportional to precipitation.
 \begin{equation}
 m = \frac{1}{\epsilon} p
 \end{equation}
 
-This is the primary difference between our model and Laembert's model-- precipitation is NOT the only moisture sink. In other words, we have:
-\begin{equation}
-\Delta Q = -P + M
-\label{neweq}
-\end{equation}
-
-So, now we consider an equation for the moisture with the following physical phenomena: precipitation, moistening, horizontal transport.
+Consider an equation for the moisture with the following physical phenomena: convective moistening (precipitation, moistening) and horizontal transport.
 \begin{equation}
 \partial_t q = -p + m + t
 \end{equation}
-
-We also add that radiative cooling is related to the temperature: 
+Horizontal transport, $t$, can be understood as a diffusive term that represents horizontal mixing.
+{\color{blue} We have:
+\begin{equation}
+\Delta Q = -P + M
+\label{neweq}
+\end{equation} 
+}
+In addition, we include radiative cooling as a moisture source through conservation of moist enthalpy.  
+Radiative cooling is related to the temperature, $\theta$.
 \begin{equation}
 \frac{\rmd}{\rmd t}\theta = rc
 \end{equation}
 
-If $rc$ and $m$ were excluded, we would still achieve conservation of moist enthalpy. So we can write:
+We rely on an analysis of the two-layer shallow water equations coupled with moisture shown in \citet{LLZB2011}.
+Here, conservation of moist enthalpy is assumed to be achieved when precipitation is the only moisture sink. 
+Since our model includes radiative cooling as well as moistening through detrainment, we adjust the analysis starting from the conservation of moist enthalpy. 
+Let $me$ represent moist enthalpy, and $rc$, radiative cooling.
+
+Conservation of moist enthalpy is achieved when radiative cooling and moistening were excluded. 
+We use this conservation law to extract how moist enthalpy evolves.
 
 \begin{align*}
 \frac{\rmd}{\rmd t} me = \frac{\rmd}{\rmd t}\left(\theta + \frac{L}{c_p}q\right) &= \frac{\rmd}{\rmd t}\theta + \frac{L}{c_p}\left(\partial_t q + \vec{u}\cdot \nabla q + w\partial_z q\right) \\
@@ -83,15 +115,15 @@ If $rc$ and $m$ were excluded, we would still achieve conservation of moist enth
 
 We compute: $\frac{\rmd}{\rmd t} ME $, and add in our results from incompressibility and conservation of mass.
 \begin{align*}
- \partial_t h +\vec{u}\cdot \nabla h &= \partial_t h +\nabla(\vec{u}\cdot h) + w(h) \text{\quad (Product Rule and incompressibility)}\\
- &= \Delta h + w(h) = -W + w(h)\text{\quad (Conservation of Mass) }
- \end{align*}
- \begin{equation}
+\partial_t h +\vec{u}\cdot \nabla h &= \partial_t h +\nabla(\vec{u}\cdot h) + w(h) \text{\quad (Product Rule and incompressibility)}\\
+&= \Delta h + w(h) = -W + w(h)\text{\quad (Conservation of Mass) }
+\end{align*}
+\begin{equation}
 \Delta ME = \Delta \int_{0}^{h} me \rmd z= me(h)\left( -W + w(h) \right) + \int_{0}^{h} \partial_tme \rmd z + \left(\nabla \cdot\vec{u} \right)\int_{0}^{h} me \rmd z + \vec{u}\cdot \int_{0}^{h}\nabla me \rmd z 
  \label{eqdt}
 \end{equation}
   
-Although we no longer have conservation of moist enthalpy, we can still compute $\frac{\rmd}{\rmd t} me$, and vertically integrate it to get another expression for the integral terms in \ref{eqdt}.  
+Although we no longer have conservation of moist enthalpy, we can still compute $\frac{\rmd}{\rmd t} me$, and vertically integrate it to get another expression for the integral terms in Equation \ref{eqdt}.  
 \begin{align}
 \int_{0}^{h} \frac{\rmd}{\rmd t} me \rmd z &= \int_{0}^{h} \partial_t me \rmd z + \int_{0}^{h} (\nabla \cdot \vec{u}) me \rmd z + \int_{0}^{h} \vec{u} \cdot \nabla me \rmd z + \int_{0}^{h} \partial_z (w me) \rmd z \\
 &= \int_{0}^{h} \partial_t me \rmd z + (\nabla \cdot \vec{u})\int_{0}^{h}  me \rmd z + \vec{u} \cdot \int_{0}^{h} \nabla me \rmd z + w(h)me(h) \\
@@ -119,23 +151,12 @@ W &= \beta\left(P+\frac{c_p}{L} RC\right)\\
 \beta &= \frac{L}{c_p}\frac{1}{\theta_2-\theta_1}
 \end{align}
 
-\subsection{Radiative Cooling}
-
-We formulate the radiative cooling function with the following:
-\begin{equation}
-\beta \frac{c_p}{L} RC = -\frac{h_2-h_1}{T_{RC}}\HH(h_2-h_1)
-\end{equation}
-where $H$ is the heaviside function. ??$\frac{c_p}{L}$ has the units of temperature. ?? The heaviside function ensure that only radiative cooling (and not heating!) occurs. That is, when the upper layer  is taller ($h_2 > h_1$), the whole term is negative. $T_{RC}$ is introduced to scale the cooling phenomena. We will approximate it to be $\approx 16$ days. With the nondimensionalized variables, we result in:
-\begin{equation}
-\beta \frac{c_p}{L} RC = -H\frac{h_2-h_1}{T_{RC}}\HH(h_2-h_1).
-\end{equation}
 
 \section{Dimensional Governing Equations}
 Velocity Equations:
 \begin{align}
-\partial_t \vec{u_1} + (\vec{u_1}\cdot \nabla )\vec{u_1} +  f\hat{k} \times \vec{u_1} &= -g \nabla (h_1 + h_2)	\\
+\partial_t \vec{u_1} + (\vec{u_1}\cdot \nabla )\vec{u_1} +  f\hat{k} \times \vec{u_1} &= -g \nabla (h_1 + h_2)	\label{eqn:DVel}\\
 \partial_t \vec{u_2} + (\vec{u_2}\cdot \nabla )\vec{u_2} +  f\hat{k} \times \vec{u_2} &= -g \nabla (h_1 + \alpha h_2)	 + \frac{\vec{u_1}-\vec{u_2}}{h_2}\beta \left(P + \frac{c_p}{L}RC \right)
-\label{DVel}
 \end{align}
 Here, $\alpha = \frac{\theta_2}{\theta_1}$. 
 We also assume that $W_2 \equiv 0$.
@@ -145,7 +166,7 @@ Conservation of Mass (height):
 \begin{align}
 \Delta h_1 &= -W_1 = -\beta \left(P + \frac{c_p}{L}RC\right)\\
 \Delta h_2 &= -W_2 + W_1 = \beta \left(P + \frac{c_p}{L}RC\right)
-\label{DHei}
+\label{eqn:DHei}
 \end{align}
 
 Moisture Dynamics:
@@ -153,7 +174,7 @@ Moisture Dynamics:
 \begin{align}
 \Delta Q &= -P + M\\
 &= \left(-1 + \frac{1}{\epsilon} \right)P
-\label{DMoi}
+\label{eqn:DMoi}
 \end{align}
 
 \subsection{Parameter Values}
@@ -178,9 +199,45 @@ This yields $\alpha \approx 1+\frac{900}{5000g} \approx 1.02$.
 	\end{tabular}
 \end{center}
 
-\section{Precipitation Models}
+\section{Radiative Cooling and Precipitation Models}
+In order to ``close'' the governing equations (Eq. \ref{eqn:DVel}--\ref{eqn:DMoi}), we consider several models for $P$ and $RC$.
+
+\subsection{Radiative Cooling}
+
+We formulate the radiative cooling function with the following:
+\begin{equation}
+\beta \frac{c_p}{L} RC = -\frac{h_2-h_1}{T_{RC}}\HH(h_2-h_1)
+\end{equation}
+where $H$ is the heaviside function.{\color{blue}$\frac{c_p}{L}$ has the units of temperature.} The heaviside function ensure that only radiative cooling (and not heating!) occurs. 
+That is, when the upper layer  is taller ($h_2 > h_1$), the whole term is negative. 
+$T_{RC}$ is introduced to scale the cooling phenomena. 
+We will approximate it to be $\approx 16$ days. 
+{\color{blue} With the nondimensionalized variables, we result in:
+	\begin{equation}
+	\beta \frac{c_p}{L} RC = -H\frac{h_2-h_1}{T_{RC}}\HH(h_2-h_1).
+	\end{equation}
+}
 \subsection{Betts-Miller}
-\subsection{Craig \& Mack}
+In this model, rain rate is given by some proportion ($\tau_q$) of the amount of moisture above some saturation level ($Q_s$).
+\begin{equation*}
+P(Q) = \frac{Q-Q_s}{\tau_q}\HH{(Q-Qs)},
+\end{equation*}
+where $\HH(\cdot)$ denotes the heaviside function. 
+
+\subsection{Craig \& Mack \citep{CM2013}}
+The precipitation model is the following:
+\begin{equation}
+P(Q) = a(t)\left(\exp(b\frac{Q}{Qs})-1\right),
+\end{equation}
+where 
+\begin{equation}
+a(t) = \frac{P_{ave}}{\frac{1}{A}\int \left( \exp(b\frac{Q}{Qs})-1 \right)\rmd A}
+\end{equation}
+
+This $a(t)$ is used to enforce a constant total amount of precipitation over the area at each time-step. 
+{\color{blue} We disregard this, and simply replace $a(t)$ with $P_{ave}$ divided by some large number $PP$ such as 15,000.}
+The quantity $8$ kg m$^{-2}$ day$^{-1}$ is a reasonable estimate for $P_{ave}$ in radiative-convective equilibrium.
+Recall that kg m$^{-2}$ day$^{-1}$ = mm day$^{-1}$ = $\frac{1}{86,400,000}$ m s$^{-1}$. 
 \subsubsection{Parameters}
 \begin{center}
 	\begin{tabular}{||c |c|c|| } 
@@ -188,9 +245,17 @@ This yields $\alpha \approx 1+\frac{900}{5000g} \approx 1.02$.
 		not fixed & $\epsilon$ &   $\delta \frac{Q}{Qs}$ \\ \hline
 		not fixed & $\delta$ & $ \approx 1.1$  \\ \hline
 		not fixed & $b$& $ \approx 11.4$\\ \hline
-		
 	\end{tabular}
 \end{center}
+
+\subsection{Hottovy and Stechman}
+\subsection{Stochastic precipitation models with memory}
+
+
+
+\clearpage
+\bibliographystyle{plainnat}
+\bibliography{refs}
 
 
 \end{document}
