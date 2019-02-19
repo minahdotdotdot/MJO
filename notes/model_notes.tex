@@ -84,7 +84,7 @@ Our upgraded BLLZ09 model is therefore
 \begin{align}
 \partial_t \vec{v} + \left( \vec{v}\cdot \nabla \right)\vec{v} &= -g\nabla h - f\hat{z}\times \vec{v}\\
 \partial_t h + \nabla \cdot \left(\vec{v}h\right) &= -\gamma P -\frac{(h-h_0)}{T_{RC}}H(h_0-h)\\
-\partial_t Q + \nabla \cdot \left(\vec{v}Q\right) &= -P + \frac{1}{\epsilon}P + \sigma_Q \tanh(3Q)\dot{W}_Q.
+\partial_t Q + \nabla \cdot \left(\vec{v}Q\right) &= -P + \frac{1}{\epsilon}P + \sigma_Q \tanh(3Q/Q_s)\dot{W}_Q.
 \end{align}
 The term $\dot{W}_Q$ represents Gaussian white noise in time and space. 
 We should really assume that this is Stratonovich rather than Ito; on the other hand we're not trying to make a careful model of a physical process, so it's fine to just assume it's Ito.
@@ -251,6 +251,9 @@ In this model, rain rate is given by some proportion ($\tau_q$) of the amount of
 P(Q) = \frac{Q-Q_s}{\tau_q}\HH{(Q-Qs)},
 \end{equation*}
 where $\HH(\cdot)$ denotes the Heaviside function. 
+Hottovy \& Stechmann use $\tau_d=96$ hours, which is very slow.
+That also balances the amplitude of their noise\ldots
+There is currently a huge mismatch between the precipitation rates predicted by our Craig and Mack model and our Betts-Miller model.
 
 \subsection{Craig \& Mack \citep{CM2013}}
 The precipitation model is the following:
@@ -262,10 +265,12 @@ where
 a(t) = \frac{P_{ave}}{\frac{1}{A}\int \left( \exp(b\frac{Q}{Qs})-1 \right)\rmd A}
 \end{equation}
 
-This $a(t)$ is used by Craig \& Mack to enforce a constant total amount of precipitation over the area at each time-step. 
-{\color{blue} We disregard this, and simply replace $a(t)$ with $P_{ave}$ divided by some large number $PP$ such as 15,000.}
-{\bf This sounds horrific. There is a principled reason for dividing by 15,000.} 
+This $a(t)$ is used by Craig \& Mack to enforce a constant total amount of precipitation over the area at each time-step.
+We don't want to enforce a fixed total precipitation rate, so we will replace the average on the bottom by a constant; for example if we set $Q=Q_s/\hat{\beta}$ then we'd get a constant of about 32,000 in the denominator.
+It's unlikely that $Q = Q_s/\hat{\beta}$ throughout the domain; instead it is probably smaller.
+So we need to try a range of values in the denominator and can start around 15,000.
 The quantity $8$ kg m$^{-2}$ day$^{-1}$ is a reasonable estimate for $P_{ave}$ in radiative-convective equilibrium.
+If $Q=Q_s/\hat{\beta}$ this leads to a rain rate of about 0.7 mm/hr, which is quite small.
 Recall that kg m$^{-2}$ day$^{-1}$ = mm day$^{-1}$ = $\frac{1}{86,400,000}$ m s$^{-1}$. 
 \subsubsection{Parameters}
 \begin{center}
@@ -292,7 +297,16 @@ We should probably vary it and see what happens as it becomes larger than or sma
 The above model should be applied in a Lagrangian sense, yielding
 \[\Delta P = \frac{P_0-P}{\tau_{MS09}}.\]
 If the velocity was nondivergent this would avoid situations where $P$ is large enough to cause negative $Q$ (at least in the absence of noise and numerical errors).
-As it stands, it's not clear if this formulation will avoid negative $Q$.
+As it stands, it's not clear if this formulation will avoid negative $Q$.\\
+
+The 2009 paper used a linear formulation that the above is meant to mimic. 
+Later papers use a nonlinear version that was mentioned but not used in the 2009 paper.
+In the nonlinear model the precipitation tendency is proportional to both $P$ and $Q$ anomalies.
+We can model this somewhat crudely by making the restoring time scale $\tau_{MS09}$ related to $Q$.
+Specifically, if we let $\tau_{MS09}\to \tau_{MS09}Q_s/Q$ then we obtain the following model
+\[\Delta P = \left(\frac{P_0-P}{\tau_{MS09}}\right)\frac{Q}{Q_s}.\]
+Qualitatively this means that if $Q$ is close to $Q_s$ then the restoring is on time scale $\tau_{MS09}$.
+If $Q\ll Q_s$ then the restoring is very slow (long time scale), whereas if $Q\gg Q_s$ then the restoring is rapid (short time scale).
 
 \subsection{Hottovy and Stechman}
 In a 2015 SJAM paper Hottovy \& Stechmann analyze four models for precipitation and moistening at a point (no horizontal extent; `single column').
