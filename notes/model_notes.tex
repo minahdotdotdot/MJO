@@ -251,9 +251,11 @@ In this model, rain rate is given by some proportion ($\tau_q$) of the amount of
 P(Q) = \frac{Q-Q_s}{\tau_q}\HH{(Q-Qs)},
 \end{equation*}
 where $\HH(\cdot)$ denotes the Heaviside function. 
-Hottovy \& Stechmann use $\tau_d=96$ hours, which is very slow.
-That also balances the amplitude of their noise\ldots
-There is currently a huge mismatch between the precipitation rates predicted by our Craig and Mack model and our Betts-Miller model.
+Hottovy \& Stechmann use $\tau_d=96$ hours, which is extremely slow.
+To get rain rates comparable to the (observationally motivated) models in the next two sections requires $\tau_q$ between $1/30$ and $1/10$ hours.
+The mismatch between HS15's precipitation parameters and ours will possibly require us to reduce the noise forcing amplitude $\sigma_Q$ from $50$ mm / hr$^{1/2}$ to about $50/\sqrt{10}$ mm / hr$^{1/2}$.
+I made this estimate assuming that we are still using HS15's diffusion coefficient $750$ km$^2$ / hr.
+
 
 \subsection{Craig \& Mack \citep{CM2013}}
 The precipitation model is the following:
@@ -281,6 +283,15 @@ Recall that kg m$^{-2}$ day$^{-1}$ = mm day$^{-1}$ = $\frac{1}{86,400,000}$ m s$
 		not fixed & $b$& $ \approx 11.4$\\ \hline
 	\end{tabular}
 \end{center}
+
+\subsection{Neelin et al.~2009}
+Neelin, Peters, and Hales (JAS 2009) fit precipitation rates to $Q$ from observational data.
+The fit a power law to precipitation and end up with
+\[P(Q) = a\left(\frac{Q-Q_s}{Q_s}\right)^{1/4}\]
+(actually their best-fit exponent was .23; see caption of figure 2).
+The best-fit value of $a$ was not reported, but eyeballing it I guess $a\approx 4.4$ mm/hr.
+There's clearly nonzero $P$ below the cutoff $Q_s$ in their data.
+Rather than try to change their model to account for this, I think using it in a model with memory (see next section) will lead to nonzero $P$ below $Q_s$. 
 
 \subsection{MJO Skeleton}
 The MJO skeleton model of Majda \& Stechmann (PNAS 2009) has an unusual model for precipitation.
