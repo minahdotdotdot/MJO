@@ -13,7 +13,7 @@ IC = genInitSr();
 @inline function P(
         LL::T, UU::T, QQ::T, B::T, Qs::T, q::T, T_Q::T, PP::T) where T<:Real
     
-    return (8.0*LL)/(QQ*86400000.0*UU*PP)*(exp(B*q/Qs)-1.0)
+    return (8.0*LL)/(QQ*86400000.0*UU*PP)*(exp(B*QQ*q/Qs)-1.0)
 end
 
 ## Precipitation and Radiative Cooling together (RC never appears on its own.)
