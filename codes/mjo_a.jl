@@ -3,7 +3,7 @@
 # Copyright 2018. Not for public distribution.
 # structs and functions defined for structs
 
-struct MJO_params
+mutable struct MJO_params
     LL        :: Float64 #\hat{L}     ~ 10^6              (m)
     HH        :: Float64 #H           ~ 5000              (m)
     UU        :: Float64 #U           ~ 5                 (m/s)
@@ -281,6 +281,16 @@ function gen_params(h_time::Float64)
                     17500.0,           # PP
                     h_time             # time-step length
                     )
+end
+
+function ch_params!(params:: MJO_params, X::Symbol, x::Float64)
+    setproperty!(params, X, x)
+end
+
+function ch_params!(params:: MJO_params, X::Array{Symbol,1}, x::Array{Float64,1})
+    for i in length(X)
+        setproperty!(params, X[i], x[i])
+    end
 end
 
 

@@ -213,6 +213,7 @@ function imex(N::Int, every::Int, h_time::Float64;
     bb::Float64=0.042, multistep::Bool=true, step::Int=1, exscheme::Function=ab1_step,
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step])
     params = gen_params(h_time);
+    ch_params!(params, X, x); #Change params field X into value x. 
     IC     = genInitSr(scheme="imex");
     IChat  = genInitSr(scheme="im");
     state  = deepcopy(IC);     exstate = deepcopy(IC);
@@ -251,8 +252,10 @@ end
 
 function imex_print(N::Int, every::Int, h_time::Float64, name::String; 
     bb::Float64=0.042, multistep::Bool=true, step::Int=3, exscheme::Function=ab1_step,
+    X, x,
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step])
     params = gen_params(h_time);
+    ch_params!(params, X, x); #Change params field X into value x. 
     IC     = genInitSr(scheme="imex");
     IChat  = genInitSr(scheme="im");
     state  = deepcopy(IC);     exstate = deepcopy(IC);
