@@ -94,10 +94,14 @@ end
             end
         end
         fig, ax = subplots(); 
-        fig[:set_size_inches](13,2); 
-        ax[:set_aspect]("equal");
-        fig[:colorbar](
-            ax[:imshow](
+        getproperty(fig, :set_size_inches)((13,2))
+        getproperty(ax, :set_aspect)("equal")
+        #fig[:set_size_inches](13,2); 
+        #ax[:set_aspect]("equal");
+        fig.colorbar(
+        	ax.imshow(
+        #fig[:colorbar](
+        #    ax[:imshow](
                 evolfield,
                 cmap=cm,
                 extent=(0, 360, -20, 20)

@@ -211,6 +211,7 @@ Adams-Bashford with n steps (abn_step) =#
 
 function imex(N::Int, every::Int, h_time::Float64; 
     bb::Float64=0.042, multistep::Bool=true, step::Int=1, exscheme::Function=ab1_step,
+    X=:g, x=9.80665,
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step])
     params = gen_params(h_time);
     ch_params!(params, X, x); #Change params field X into value x. 
@@ -229,14 +230,14 @@ function imex(N::Int, every::Int, h_time::Float64;
         for i = 2 : step
             exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true);
             #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
-            exstate.q[:,:] = exstate.q + sqrt(h_time)*7.45*tanh.(3.0*exstate.q).*randn(size(exstate.q))
+            exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q))#7.45
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
         end
         start = step+1
     end
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
-        exstate.q[:,:] = exstate.q + sqrt(h_time)*7.45*tanh.(3.0*exstate.q).*randn(size(exstate.q))
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q))#7.45
         @printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
         if rem(i, every) ==1
@@ -252,7 +253,7 @@ end
 
 function imex_print(N::Int, every::Int, h_time::Float64, name::String; 
     bb::Float64=0.042, multistep::Bool=true, step::Int=3, exscheme::Function=ab1_step,
-    X, x,
+    X=:g, x=9.80665,
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step])
     params = gen_params(h_time);
     ch_params!(params, X, x); #Change params field X into value x. 
@@ -272,14 +273,14 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
         for i = 2 : step
             exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true);
             #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
-            exstate.q[:,:] = exstate.q + sqrt(h_time)*7.45*tanh.(3.0*exstate.q).*randn(size(exstate.q))
+            exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q)) #7.45
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
         end
         start = step+1
     end
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
-        exstate.q[:,:] = exstate.q + sqrt(h_time)*7.45*tanh.(3.0*exstate.q).*randn(size(exstate.q))
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q)) #7.45
         #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
         if rem(i, every) ==1
