@@ -1,6 +1,6 @@
 include("smooth_data.jl")
 include("mjo_a.jl")
-include("mjo_ex.jl")
+#include("mjo_ex.jl")
 include("mjo_sim_pyplot.jl")
 include("mjo_imex2.jl")
 using Printf
@@ -238,10 +238,11 @@ function imex(N::Int, every::Int, h_time::Float64;
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
         exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q))#7.45
-        @printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
+        #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
         if rem(i, every) ==1
             evol[1+div(i,every)] = state
+            @printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         end
     end
     return evol
@@ -290,3 +291,27 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     end
 end
 
+function hovmoller(evol::Array{MJO_State,1}, f::Symbol; loc::String="../movies/")
+    grid_x  = 1440;
+    grid_y  = 162;
+    equator = Int(grid_y/2)
+    toprint = Array{Float64,2}(undef,length(evol),grid_x);
+    for i = 1 : length(evol)
+        toprint[i,:] = .5*(
+            getproperty(evol[i], f)[equator:equator, :] + 
+            getproperty(evol[i], f)[equator+1:equator+1, :]
+            )
+    end
+    cm = "PuOr";
+    if f == :q
+        cm = "BuGn";
+    end
+    fig, ax = subplots();
+    getproperty(ax, :set_aspect)("equal");
+    fig.colorbar(ax.imshow(toprint, cmap=cm), orientation="horizontal");
+    savefig(
+            loc*"/hovmoller",
+            pad_inches=.10, 
+            bbox_inches="tight"
+        );
+end
