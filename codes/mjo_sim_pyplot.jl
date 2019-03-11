@@ -5,7 +5,8 @@ using PyPlot, Printf
 
 function savecontourmaps(evol::Array{MJO_State,1}, str::String; 
     draw::Symbol=:contourf,
-    aspect::Bool=true)
+    aspect::Bool=true,
+    loc::String="../movies/")
     for f in fieldnames(MJO_State)
         evolfield = 1
         cm = "PuOr"
@@ -36,7 +37,7 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String;
                 )
             );
             savefig(
-                "../movies/"*string(f)*"/"*str*string(j),
+                loc*string(f)*"/"*str*string(j),
                 pad_inches=.10, 
                 bbox_inches="tight"
             )
@@ -45,7 +46,7 @@ function savecontourmaps(evol::Array{MJO_State,1}, str::String;
     end
 end
 
-@inline function savecontourf(state::MJO_State, ii::String)
+@inline function savecontourf(state::MJO_State, ii::String; loc::String="../movies/")
     for f in fieldnames(MJO_State)
         evolfield = 1
         cm = "PuOr"
@@ -60,10 +61,14 @@ end
             end
         end
         fig, ax = subplots(); 
-        fig[:set_size_inches](13,2); 
-        ax[:set_aspect]("equal");
-        fig[:colorbar](
-            ax[:contourf](
+        getproperty(fig, :set_size_inches)((13,2))
+        getproperty(ax, :set_aspect)("equal")
+        #fig[:set_size_inches](13,2); 
+        #ax[:set_aspect]("equal");
+        fig.colorbar(
+                ax.contourf(
+        #fig[:colorbar](
+        #    ax[:contourf](
                 params.lon,
                 params.lat[2:end-1,:],
                 evolfield,
@@ -71,7 +76,7 @@ end
             )
         );
         savefig(
-            "../movies/"*string(f)*"/"*ii,
+            loc*string(f)*"/"*ii,
             pad_inches=.10, 
             bbox_inches="tight"
         )
@@ -79,7 +84,7 @@ end
     end
 end
 
-@inline function saveimshow(state::MJO_State, ii::String)
+@inline function saveimshow(state::MJO_State, ii::String; loc::String="../movies/")
     for f in fieldnames(MJO_State)
         evolfield = 1
         cm = "PuOr"
@@ -108,7 +113,7 @@ end
             )
         );
         savefig(
-            "../movies/"*string(f)*"/"*ii,
+            loc*string(f)*"/"*ii,
             pad_inches=.10, 
             bbox_inches="tight"
         )
