@@ -119,3 +119,17 @@ function smoother(q::Array{T,2};
         return smoothed
     end
 end
+
+using GaussianRandomFields, PyPlot
+function genRandField()
+    #mat = Matern(0.5,2.0)
+    #covar = CovarianceFunction(2,mat)
+    grf = GaussianRandomField(
+        CovarianceFunction(2,Matern(0.5,2.0)),
+        CirculantEmbedding(),
+        1:1:162, 
+        1:1:1440,
+        minpadding=250
+        )
+    return sample(grf)
+end
