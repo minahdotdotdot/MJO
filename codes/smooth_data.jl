@@ -24,11 +24,53 @@ function genStencil(m::Int, n::Int)
                 stencil[j,i] = exp(-x[i]^2-y[j]^2)
             end
         end
-        return stencil
+        return stencil/norm(stencil,2)
     end
 end
 
-function smoother(q::Array{Float64,2}, stencil::Array{T,2}; 
+function quadratic(a, b, c)
+    discr = b^2 - 4*a*c
+    if discr >= 0
+        return (-b + sqrt(discr))/(2a), (-b - sqrt(discr))/(2a)
+    else error("Only complex roots")
+    end
+end
+
+function cov(;a::Float64=0.0, b::Float64=0.0)
+    stencil = ones(3,3)
+    if a ==0 && b==0
+        error("Need to provide at least one var (a or b, 1>a>b)")
+    elseif b ==0
+        b1, b2 = quadratic(3, 2+8*a,2(a+a^2)-.25)
+        if b1>0 || b2>0
+            b = max(b1, b2)
+        else
+            error("no positive b values.")
+        end
+    elseif a ==0
+        a1, a2 = quadratic(2, 2+8*b, b*(2+3*b)-.25)
+        if a1>0 || a2>0
+            a = max(a1, a2)
+        else
+            error("no positive a values.")
+        end
+    end
+    for i = 1 : 3
+        for j = 1 : 3
+            if abs(i-j)==1
+                stencil[i,j] = a
+            else
+                stencil[i,j] = b
+            end
+        end
+    end
+    stencil[2,2]=1.0
+    C = [1+4*(a^2+b^2), 2*a*(1+2*b), 2*(b+a^2),a^2+2*b^2, 2*a*b, 2*b^2]/(1+4*(a^2+b^2))
+    return stencil/sqrt(1+4*a^2+4*b^2)#, C
+end 
+
+function smoother(q::Array{T,2}; 
+    stencil::Array{T,2}=cov(a=.11),
     periodic::Bool=true) where T<:Real
     m, n = size(stencil);
     mm = floor(Int,m/2)
