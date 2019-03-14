@@ -121,15 +121,22 @@ function smoother(q::Array{T,2};
 end
 
 using GaussianRandomFields, PyPlot
-function genRandField(;x=1:1:162, y=1:1:1440)
+function genRandField(smoothness::T; nu::Float64=2.0,
+    x=range(0,stop=1,length=162), 
+    y=80/9*range(0,stop=1,length=1440)
+    ) where T<:Real
+    if nu>2.0
+        error("nu must be between 0 and 2.")
+    else
     #mat = Matern(0.5,2.0)
     #covar = CovarianceFunction(2,mat)
-    grf = GaussianRandomField(
-        CovarianceFunction(2,Matern(0.5,2.0)),
-        CirculantEmbedding(),
-        x, 
-        y,
-        minpadding=250
-        )
+        grf = GaussianRandomField(
+            CovarianceFunction(2,Matern(0.5,2.0)),
+            CirculantEmbedding(),
+            smoothness*x, 
+            smoothness*y,
+            minpadding=250
+            )
+    end
     return grf
 end
