@@ -210,7 +210,7 @@ explicit RK4 (RK4_step), and
 Adams-Bashford with n steps (abn_step) =#
 
 function imex(N::Int, every::Int, h_time::Float64; 
-    bb::Float64=0.042, multistep::Bool=true, step::Int=1, exscheme::Function=ab1_step,
+    bb::Float64=0.001, multistep::Bool=true, step::Int=1, exscheme::Function=ab1_step,
     X=:g, x=9.80665,
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step])
     params = gen_params(h_time);
@@ -253,7 +253,7 @@ end
 ###################
 
 function imex_print(N::Int, every::Int, h_time::Float64, name::String; 
-    bb::Float64=0.042, multistep::Bool=true, step::Int=3, exscheme::Function=ab1_step,
+    bb::Float64=0.001, multistep::Bool=true, step::Int=3, exscheme::Function=ab1_step,
     X=:g, x=9.80665,
     loc::String="../movies/",
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step])
