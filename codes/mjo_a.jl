@@ -269,7 +269,7 @@ function gen_params(h_time::Float64)
                     1382400.0,         # T_RC
                     345600,            # T_Q
                     9.80665,           #  g
-                    6371000,           # RE
+                    6371000.0,         # RE
                     1.0184,            # AA
                     750.0,             # BB
                     1.1,               # DD
@@ -298,6 +298,8 @@ end
 include("smooth_data.jl")
 
 function genInitSr(stencil::Array{T,2}=zeros(0,0); scheme::String="ex") where T<:Real
+    grid_y=162;
+    grid_x=1440;
     if scheme =="ex"
         if stencil==zeros(0,0) # q is random field
             return MJO_State(
@@ -330,7 +332,7 @@ function genInitSr(stencil::Array{T,2}=zeros(0,0); scheme::String="ex") where T<
                 zeros(grid_y, grid_x),        #m2
                 zeros(grid_y, grid_x),        #eta1
                 zeros(grid_y, grid_x),        #eta2
-                rand(grid_y, grid_x)          #q
+                1.05 .+ 0.2*rand(grid_y, grid_x)          #q
                 )
         else              # q is random field smoothed
             return MJO_State(

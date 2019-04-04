@@ -90,6 +90,11 @@ end
     return (8.0*LL)/(QQ*86400000.0*UU*PP)*(exp(B*q/Qs)-1.0)
 end
 
+@inline function P(
+        LL::T, UU::T, QQ::T, B::T, Qs::T, q::Array{T,2}, T_Q::T, PP::T) where T<:Real
+    return (8.0*LL)/(QQ*86400000.0*UU*PP)*(exp.((B/Qs)*q) .- 1.0)
+end
+
 ## Precipitation and Radiative Cooling together (RC never appears on its own.)
 @inline function P_RC(
         LL::T, UU::T, QQ::T, B::T, Qs::T, q::T, T_Q::T, BQH::T, Tratio::T, hh2::T, hh1::T,

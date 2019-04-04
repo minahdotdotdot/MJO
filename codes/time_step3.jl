@@ -268,7 +268,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     tendlist = Array{MJO_State,1}(undef, 1); start = 2;
     tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time);
     pad=ceil(Int,log10(N/every));
-    saveimshow(state, name*string(1, pad=pad),loc=loc)
+    saveimshow(state, name*string(1, pad=pad),loc=loc, params=params)
     if multistep==true
         tendlist = Array{MJO_State,1}(undef, step);
         tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time);
@@ -286,7 +286,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
         #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
         if rem(i, every) ==1
-            saveimshow(state, name*string(1+div(i,every), pad=pad), loc=loc)
+            saveimshow(state, name*string(1+div(i,every), pad=pad), loc=loc, params=params)
         end
     end
 end

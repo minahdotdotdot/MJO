@@ -85,7 +85,7 @@ function genRandField(smoothness::T; nu::Float64=2.0,
     x=range(0,stop=1,length=162), 
     y=80/9*range(0,stop=1,length=1440)
     ) where T<:Real
-    if nu>2.0
+    if nu>2.0e
         error("nu must be between 0 and 2.")
     else
     #mat = Matern(0.5,2.0)

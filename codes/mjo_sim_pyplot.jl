@@ -1,4 +1,5 @@
 include("mjo_a.jl");
+include("mjo_imex2.jl");
 include("smooth_data.jl")
 ENV["MPLBACKEND"]="Agg"
 using PyPlot, Printf
@@ -84,7 +85,7 @@ end
     end
 end
 
-@inline function saveimshow(state::MJO_State, ii::String; loc::String="../movies/")
+@inline function saveimshow(state::MJO_State, ii::String; loc::String="../movies/", params::MJO_params)
     for f in fieldnames(MJO_State)
         evolfield = 1
         cm = "PuOr"
@@ -92,11 +93,12 @@ end
             evolfield = getproperty(state,f)[2:end-1, :]./(1 .+getproperty(state,:h1)[2:end-1, :]);
         elseif f ==:m2 || f ==:n2
             evolfield = getproperty(state,f)[2:end-1, :]./(1 .+getproperty(state,:h2)[2:end-1, :]);
+        elseif f==:q
+            cm = "BuGn"
+            evolfield = P(params.LL, params.UU, params.QQ, params.B, params.Qs, getproperty(state,f)[2:end-1, :],
+                params.T_Q, params.PP);
         else
             evolfield = getproperty(state,f)[2:end-1, :];
-            if f ==:q
-                cm = "BuGn"
-            end
         end
         fig, ax = subplots(); 
         getproperty(fig, :set_size_inches)((13,2))
