@@ -98,10 +98,11 @@ end
 ## Precipitation and Radiative Cooling together (RC never appears on its own.)
 @inline function P_RC(
         LL::T, UU::T, QQ::T, B::T, Qs::T, q::T, T_Q::T, BQH::T, Tratio::T, hh2::T, hh1::T,
-        PP::T) where T<:Real
+        PP::T, H1::Float64=1.0) where T<:Real
     value = BQH*P(LL, UU, QQ, B, Qs, q, T_Q,PP)
-    if (hh2 - hh1) > T(0)
-        value = value - Tratio * (hh2-hh1)
+    #H2 = 2 - H1 
+    if (2 - 2*H1 + hh2 - hh1) > T(0)
+        value = value - Tratio * (2 - 2*H1+hh2-hh1)
     end
     return value
 end
