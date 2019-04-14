@@ -25,7 +25,7 @@ end
     tendlist::Array{MJO_State,1}, 
     i::Int, 
     params::MJO_params; 
-    bb::Float64, h_time::Float64, init::Bool=false)
+    bb::Float64, h_time::Float64, init::Bool=false, H1::Float64=1.0)
     #i>5 is the true index number.
     #This function will calculate the state at t_i. 
     #state is the state at t_{i-1}
@@ -34,7 +34,7 @@ end
     if init==false
         ind = no0rem(i,1)
     end
-    tendlist[ind] = EXNL(params, update, state; bb=bb, h_time=h_time)
+    tendlist[ind] = EXNL(params, update, state; bb=bb, h_time=h_time, H1=H1)
     return update, tendlist
 end
 
@@ -42,18 +42,18 @@ end
     tend::MJO_State, 
     i::Int, 
     params::MJO_params; 
-    bb::Float64, h_time::Float64, scheme::Function=EXNL)
+    bb::Float64, h_time::Float64, scheme2::Function=EXNL, H1::Float64=1.0)
     yn = deepcopy(state);
-    scheme2(params, state, tend);
+    scheme2(params, state, tend, H1=H1);
     k = h * tend; #k1
     yn += 1/6*k;
-    scheme2(params, state + .5*k, tend);
+    scheme2(params, state + .5*k, tend, H1=H1);
     k = h * tend; #k2
     yn += 1/3*k;
-    scheme2(params, state + .5*k, tend);
+    scheme2(params, state + .5*k, tend, H1=H1);
     k = h * tend; #k3
     yn += 1/3*k;
-    scheme2(params, state + k, tend);
+    scheme2(params, state + k, tend, H1=H1);
     k = h * tend; #k4
     return yn + (1/6)*k, 0
 end
@@ -65,7 +65,7 @@ end
     params::MJO_params; 
     bb::Float64, h_time::Float64,
     xind::Array{Array{Int,1},1}=[[2,1],[1,2]],
-    init::Bool=false)
+    init::Bool=false, H1::Float64=1.0)
     #i>5 is the true index number.
     #This function will calculate the state at t_i. 
     #state is the state at t_{i-1}
@@ -77,7 +77,7 @@ end
     if init==false
         ind = no0rem(i,2)
     end
-    tendlist[ind] = EXNL(params, update, state; bb=bb, h_time=h_time)
+    tendlist[ind] = EXNL(params, update, state; bb=bb, h_time=h_time, H1=H1)
     return update, tendlist
 end
 
@@ -88,7 +88,7 @@ end
     params::MJO_params; 
     bb::Float64, h_time::Float64,
     xind::Array{Array{Int,1},1}=[[3,2,1],[1,3,2],[2,1,3]],
-    init::Bool=false)
+    init::Bool=false, H1::Float64=1.0)
     #i>5 is the true index number.
     #This function will calculate the state at t_i. 
     #state is the state at t_{i-1}
@@ -101,7 +101,7 @@ end
     if init ==false
         ind = no0rem(i,3)
     end
-    tendlist[ind] = EXNL(params, update, state; bb=bb, h_time=h_time)
+    tendlist[ind] = EXNL(params, update, state; bb=bb, h_time=h_time, H1=H1)
     return update, tendlist
 end
 
@@ -111,7 +111,7 @@ end
     i::Int, 
     params::MJO_params; 
     bb::Float64, h_time::Float64,
-    xind::Array{Array{Int,1},1}=[[4,3,2,1],[1,4,3,2],[2,1,4,3],[3,2,1,4]])
+    xind::Array{Array{Int,1},1}=[[4,3,2,1],[1,4,3,2],[2,1,4,3],[3,2,1,4]], H1::Float64=1.0)
     #i>5 is the true index number.
     #This function will calculate the state at t_i. 
     #state is the state at t_{i-1}
@@ -121,7 +121,7 @@ end
         +37/24 * tendlist[xind[no0rem(i,4)][3]] 
         -9/24 * tendlist[xind[no0rem(i,4)][4]] 
         )
-    tendlist[no0rem(i,4)] = EXNL(params, update, state; bb=bb, h_time=h_time)
+    tendlist[no0rem(i,4)] = EXNL(params, update, state; bb=bb, h_time=h_time, H1=H1)
     return update, tendlist
 end
 
@@ -166,13 +166,13 @@ end
 #########################
 ## Save Time Evolution ##
 #########################
-function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::Int, every::Int)
+function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::Int, every::Int, H1::Float64=1.0)
     tend = deepcopy(initial_state)
     evol = Array{MJO_State,1}(undef,div(N, every)+1)
     evol[1] = initial_state
     state = deepcopy(initial_state)
     for i = 2 : N+1
-        EXNL(params, state, tend);
+        EXNL(params, state, tend, H1=H1);
         if istherenan(tend) == true || isthereinf(tend) ==true
             print(i)
             return evol[1:div(i, every)]
@@ -186,13 +186,13 @@ function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::I
     return evol
 end
 
-function RK4(initial_state::MJO_State, params::MJO_params, h::Float64, N::Int, every::Int)
+function RK4(initial_state::MJO_State, params::MJO_params, h::Float64, N::Int, every::Int, H1::Float64=1.0)
     evol = Array{MJO_State,1}(undef, div(N, every)+1)
     evol[1] = initial_state
     state = deepcopy(initial_state)
     tend = deepcopy(initial_state)
     for i = 2 : N+1
-        state = RK4_step(state, tend, params, h)
+        state = RK4_step(state, tend, params, h, H1=H1)
         if rem(i,every)==1
             if istherenan(state)==true || isthereinf(state)==true
                 print(i)
@@ -212,7 +212,7 @@ Adams-Bashford with n steps (abn_step) =#
 function imex(N::Int, every::Int, h_time::Float64; 
     bb::Float64=0.001, multistep::Bool=true, step::Int=1, exscheme::Function=ab1_step,
     X=:g, x=9.80665,
-    msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step])
+    msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step], H1::Float64=1.0)
     params = gen_params(h_time);
     ch_params!(params, X, x); #Change params field X into value x. 
     IC     = genInitSr(scheme="imex");
@@ -223,12 +223,12 @@ function imex(N::Int, every::Int, h_time::Float64;
     kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
     tendlist = Array{MJO_State,1}(undef, 1); start = 2
     evol     = Array{MJO_State,1}(undef, div(N, every)+1);
-    evol[1] = IC; tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time);
+    evol[1] = IC; tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time, H1=H1);
     if multistep==true
         tendlist = Array{MJO_State,1}(undef, step);
-        tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time);
+        tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time, H1=H1);
         for i = 2 : step
-            exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true);
+            exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true, H1=H1);
             #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
             exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q))#7.45
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
@@ -236,7 +236,7 @@ function imex(N::Int, every::Int, h_time::Float64;
         start = step+1
     end
     for i = start : N+1
-        exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
+        exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time, H1=H1)
         exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q))#7.45
         #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
@@ -256,7 +256,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     bb::Float64=0.001, multistep::Bool=true, step::Int=3, exscheme::Function=ab1_step,
     X=:g, x=9.80665,
     loc::String="../movies/",
-    msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step])
+    msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step], H1::Float64=1.0)
     params = gen_params(h_time);
     ch_params!(params, X, x); #Change params field X into value x. 
     IC     = genInitSr(scheme="imex");
@@ -266,14 +266,14 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     bb     = bb*h_time; #input bb should be the actual diffusion constant: K = bb/h_time.
     kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
     tendlist = Array{MJO_State,1}(undef, 1); start = 2;
-    tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time);
+    tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time, H1=H1);
     pad=ceil(Int,log10(N/every));
     saveimshow(state, name*string(1, pad=pad),loc=loc, params=params)
     if multistep==true
         tendlist = Array{MJO_State,1}(undef, step);
-        tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time);
+        tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time, H1=H1);
         for i = 2 : step
-            exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true);
+            exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true, H1=H1);
             #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
             exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q)) #7.45
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
@@ -281,12 +281,12 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
         start = step+1
     end
     for i = start : N+1
-        exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time)
+        exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time, H1=H1)
         exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q)) #7.45
         #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
         if rem(i, every) ==1
-            saveimshow(state, name*string(1+div(i,every), pad=pad), loc=loc, params=params)
+            saveimshow(state, name*string(1+div(i,every), pad=pad), loc=loc, params=params, H1=H1)
         end
     end
 end

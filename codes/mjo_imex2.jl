@@ -109,15 +109,15 @@ end
 @inline function div_flux(
         m::Array{T, 2}, n::Array{T, 2}, h::Array{T, 2}, q::Array{T, 2}, 
         ii::Int64, iii::Int64, iiii::Int64, jj::Int64,
-        delt_x::T, delt_y::T) where T<:Real
+        delt_x::T, delt_y::T; H::T=1.0) where T<:Real
     return (
         .5*delt_x*(
-        (m[jj,ii]+m[jj,iiii+1])/(2+h[jj,ii]+h[jj,iiii+1])*(q[jj,ii]+q[jj,iiii+1])
-        - (m[jj,iii-1]+m[jj,ii])/(2+h[jj,iii-1]+h[jj,ii])*(q[jj,iii-1]+q[jj,ii])
+        (m[jj,ii]+m[jj,iiii+1])/(2*H+h[jj,ii]+h[jj,iiii+1])*(q[jj,ii]+q[jj,iiii+1])
+        - (m[jj,iii-1]+m[jj,ii])/(2*H+h[jj,iii-1]+h[jj,ii])*(q[jj,iii-1]+q[jj,ii])
         ) +
         .5*delt_y*(
-            (n[jj,ii]+n[jj+1,ii])/(2+h[jj,ii]+h[jj+1,ii])*(q[jj,ii]+q[jj+1,ii])
-            -(n[jj-1,ii]+n[jj,ii])/(2+h[jj-1,ii]+h[jj,ii])*(q[jj-1,ii]+q[jj,ii])
+            (n[jj,ii]+n[jj+1,ii])/(2*H+h[jj,ii]+h[jj+1,ii])*(q[jj,ii]+q[jj+1,ii])
+            -(n[jj-1,ii]+n[jj,ii])/(2*H+h[jj-1,ii]+h[jj,ii])*(q[jj-1,ii]+q[jj,ii])
             )
         )
 end 
@@ -175,7 +175,7 @@ end
     return h1[jj,ii] + a*h2[jj,ii]
 end
 
-function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=0, h_time::Float64=0)
+function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=0, h_time::Float64=0, H1::Float64=1.0)
     delt_x = params.delt_x        :: Float64
     delt_y = params.delt_y        :: Float64
     LL     = params.LL            :: Float64
@@ -190,6 +190,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
     T_Q    = params.T_Q           :: Float64
     PP     = params.PP            :: Float64
 
+    H2 = 2.0 - H1
     #Set diffusion constant for q equations. 
     KK = 0; 
     if bb==0 
@@ -223,40 +224,40 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
             ### MOMENTUM
 
             out.m1[jj,ii] = (
-                - div_flux(state.m1, state.n1, state.h1, state.m1, ii, iii, iiii, jj, delt_x, delt_y)
+                - div_flux(state.m1, state.n1, state.h1, state.m1, ii, iii, iiii, jj, delt_x, delt_y, H=H1)
                 + params.Ro*params.y[jj]*state.n1[jj,ii]                             #=+1/Ro*n1=#
                 - params.Fr*(
                     state.h1[jj,ii] * .5*delt_x*(h_sum(state.h1,state.h2,jj,iiii+1)-h_sum(state.h1,state.h2,jj,iii-1))
                     )                                                               #=h_1∂x(h_1+h_2)=#
-                - state.m1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
+                - state.m1[jj,ii]/(H1+state.h1[jj,ii])*value_P_RC
                 )
 
             out.n1[jj,ii] = (
-                - div_flux(state.m1, state.n1, state.h1, state.n1, ii, iii, iiii, jj, delt_x, delt_y)
+                - div_flux(state.m1, state.n1, state.h1, state.n1, ii, iii, iiii, jj, delt_x, delt_y, H=H1)
                 - params.Ro*params.y[jj]*state.m1[jj,ii]                             #=-1/Ro*m1=#
                 - params.Fr*(
                     state.h1[jj,ii] * .5*delt_y*(h_sum(state.h1,state.h2,jj+1,ii)-h_sum(state.h1,state.h2,jj-1,ii))
                     )                                                               #=h_1∂y(h_1+h_2)=#
-                - state.n1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
+                - state.n1[jj,ii]/(H1+state.h1[jj,ii])*value_P_RC
                 )
 
             out.m2[jj,ii] = (
-                - div_flux(state.m2, state.n2, state.h2, state.m2, ii, iii, iiii, jj, delt_x, delt_y)
+                - div_flux(state.m2, state.n2, state.h2, state.m2, ii, iii, iiii, jj, delt_x, delt_y, H=H2)
                 + params.Ro*params.y[jj]*state.n2[jj,ii]                             #=+1/Ro*n2=#
                 - params.Fr*(
                     state.h2[jj,ii] * .5*delt_x*(h_sum_a(state.h1,state.h2,AA,jj,iiii+1) - h_sum_a(state.h1,state.h2,AA,jj,iii-1))
                     )                                                               #=h_1∂x(h_1+\alpha* h_2)=#
-                + state.m1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
+                + state.m1[jj,ii]/(H1+state.h1[jj,ii])*value_P_RC
                 )
 
 
             out.n2[jj,ii] = (
-                - div_flux(state.m2, state.n2, state.h2, state.n2, ii, iii, iiii, jj, delt_x, delt_y)
+                - div_flux(state.m2, state.n2, state.h2, state.n2, ii, iii, iiii, jj, delt_x, delt_y, H=H2)
                 - params.Ro*params.y[jj]*state.m2[jj,ii]                             #=-1/Ro*m2=#
                 - params.Fr*(
                     state.h2[jj,ii] * .5*delt_y*(h_sum_a(state.h1,state.h2,AA,jj+1,ii)-h_sum_a(state.h1,state.h2,AA,jj-1,ii))
                     )                                                               #=h_1∂y(h_1+\alpha*h_2)=#
-                + state.n1[jj,ii]/(1+state.h1[jj,ii])*value_P_RC
+                + state.n1[jj,ii]/(H1+state.h1[jj,ii])*value_P_RC
                 )
 
             ### MASS

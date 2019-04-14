@@ -85,14 +85,15 @@ end
     end
 end
 
-@inline function saveimshow(state::MJO_State, ii::String; loc::String="../movies/", params::MJO_params)
+@inline function saveimshow(state::MJO_State, ii::String; loc::String="../movies/", params::MJO_params, H1::Float64=1.0)
+    H2 = 2.0 - H1
     for f in fieldnames(MJO_State)
         evolfield = 1
         cm = "PuOr"
         if f == :m1 || f ==:n1
-            evolfield = getproperty(state,f)[2:end-1, :]./(1 .+getproperty(state,:h1)[2:end-1, :]);
+            evolfield = getproperty(state,f)[2:end-1, :]./(H1 .+getproperty(state,:h1)[2:end-1, :]);
         elseif f ==:m2 || f ==:n2
-            evolfield = getproperty(state,f)[2:end-1, :]./(1 .+getproperty(state,:h2)[2:end-1, :]);
+            evolfield = getproperty(state,f)[2:end-1, :]./(H2 .+getproperty(state,:h2)[2:end-1, :]);
         elseif f==:q
             cm = "BuGn"
             evolfield = P(params.LL, params.UU, params.QQ, params.B, params.Qs, getproperty(state,f)[2:end-1, :],
