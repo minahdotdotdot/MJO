@@ -27,18 +27,21 @@
 \begin{document}
 \maketitle
 \section{Governing Equations}
-We modify the original set of governing equations by setting $h_i=1+\eta_i$, and separating linear and non-linear terms. We will be treating linear terms implicitly, and non-linear terms explicitly. 
+We modify the original set of governing equations by setting $h_i=H_i+\eta_i$, and separating linear and non-linear terms. 
+We had used $H_1=H_2=1$, but now will consider a much thicker lower layer and a thinner higher layer such that $\frac{H_2}{H_1}<<1$, and $H_1+H_2=2$ to keep the same nondimensional constant as before. 
+The goal of this adjustment is to get similar results as the single-layer models.
+We will be treating linear terms implicitly, and non-linear terms explicitly. 
 \subsubsection*{Momentum}
 \begin{align*}
 \pd{t}\vec{m_1} =& - \frac{1}{Ro}\left(\hat{k}\times \vec{m_1}\right)
 -\frac{1}{Fr^2}\nabla\left(\eta_1+\eta_2\right)+ \kappa \nabla ^2 \vec{m_1}\quad\text{(Linear)}\\
-&- \nabla \cdot \left(\frac{1}{h_1}\vec{m_1}\vec{m_1}\right) -\frac{1}{Fr^2} \eta_1\nabla\left(\eta_1 + \eta_2\right) -\frac{\vec{m_1}}{1+\eta_1} \left( \beta \frac{\hat{Q}}{H}\hat{P}(Q) - \frac{T}{T_{RC}}(\eta_2-\eta_1)\HH{(\eta_2-\eta_1)}\right) \quad\text{(Nonlinear)}
+&- \nabla \cdot \left(\frac{1}{H_1+\eta_1}\vec{m_1}\vec{m_1}\right) -\frac{1}{Fr^2} \eta_1\nabla\left(\eta_1 + \eta_2\right) -\frac{\vec{m_1}}{H_1+\eta_1} \left( \beta \frac{\hat{Q}}{H}\hat{P}(Q) - \frac{T}{T_{RC}}(\eta_2-\eta_1)\HH{(\eta_2-\eta_1)}\right) \quad\text{(Nonlinear)}
 \end{align*}
 
 \begin{align*}
 \pd{t}\vec{m_2} =& - \frac{1}{Ro}\left(\hat{k}\times \vec{m_2}\right)
 -\frac{1}{Fr^2}\nabla\left(\eta_1+\alpha \eta_2\right)+ \kappa \nabla ^2 \vec{m_2}\quad\text{(Linear)}\\
-&- \nabla \cdot \left(\frac{1}{1+\eta_2}\vec{m_2}\vec{m_2}\right) -\frac{1}{Fr^2} \eta_1\nabla\left(\eta_1 + \alpha\eta_2\right) -\frac{\vec{m_2}}{1+\eta_2} \left( \beta \frac{\hat{Q}}{H}\hat{P}(Q) - \frac{T}{T_{RC}}(\eta_2-\eta_1)\HH{(\eta_2-\eta_1)}\right) \quad\text{(Nonlinear)}
+&- \nabla \cdot \left(\frac{1}{H_2+\eta_2}\vec{m_2}\vec{m_2}\right) -\frac{1}{Fr^2} \eta_1\nabla\left(\eta_1 + \alpha\eta_2\right) +\frac{\vec{m_1}}{H_1+\eta_1} \left( \beta \frac{\hat{Q}}{H}\hat{P}(Q) - \frac{T}{T_{RC}}(\eta_2-\eta_1)\HH{(\eta_2-\eta_1)}\right) \quad\text{(Nonlinear)}
 \end{align*}
 
 
@@ -72,16 +75,18 @@ The discretization is given by treating the nonlinear, explicit terms as the for
 Solving for $\vec{x}^{(n+1)}$ includes the time integration step as well. 
 
 \subsection{Linear Operator}
-We collect the linear terms and try to simplify the matrix linear operator. For now, we exclude the diffusion terms that were previously used to improve numerical stability, which eliminates linear terms in the $q$ equation.
+We collect the linear terms and try to simplify the matrix linear operator. 
+%For now, we exclude the diffusion terms that were previously used to improve numerical stability, which eliminates linear terms in the $q$ equation.
+Let $\frac{\beta}{h}$ be the diffusion constant, where $h$ is the time step size. 
 
 \[\pd{t}\vec{x} = L\vec{x}=
 \left[\begin{array}{ccc|ccc}
-0 & \frac{1}{Ro}y & -\frac{1}{Fr^2}\pd{x} & 0 & 0 & -\frac{1}{Fr^2}\pd{x} \\
--\frac{1}{Ro}y & 0 & -\frac{1}{Fr^2}\pd{y} & 0 & 0 & -\frac{1}{Fr^2}\pd{y}\\
--\pd{x} & -\pd{y} & 0 & 0 & 0 & 0 \\ \hline
-0 & 0 & -\frac{1}{Fr}\pd{x} & 0 & \frac{1}{Ro}y &  -\frac{\alpha}{Fr^2}\pd{x} \\
-0 & 0 & -\frac{1}{Fr}\pd{y} & -\frac{1}{Ro}y  & 0&  -\frac{\alpha}{Fr^2}\pd{y} \\
-0 & 0 & 0 & -\pd{x} & -\pd{y} & 0
+\frac{\beta}{h}(\pd{xx}+\pd{yy}) & \frac{1}{Ro}y & -\frac{1}{Fr^2}\pd{x} &  & 0 & -\frac{1}{Fr^2}\pd{x} \\
+-\frac{1}{Ro}y & \frac{\beta}{h}(\pd{xx}+\pd{yy})  & -\frac{1}{Fr^2}\pd{y} & 0 & 0 & -\frac{1}{Fr^2}\pd{y}\\
+-\pd{x} & -\pd{y} & \frac{\beta}{h}(\pd{xx}+\pd{yy})  & 0 & 0 & 0 \\ \hline
+0 & 0 & -\frac{1}{Fr}\pd{x} & \frac{\beta}{h}(\pd{xx}+\pd{yy})  & \frac{1}{Ro}y &  -\frac{\alpha}{Fr^2}\pd{x} \\
+0 & 0 & -\frac{1}{Fr}\pd{y} & -\frac{1}{Ro}y  & \frac{\beta}{h}(\pd{xx}+\pd{yy}) &  -\frac{\alpha}{Fr^2}\pd{y} \\
+0 & 0 & 0 & -\pd{x} & -\pd{y} & \frac{\beta}{h}(\pd{xx}+\pd{yy}) 
 \end{array}\right] \begin{bmatrix}
 m_1\\
 n_1\\
@@ -100,47 +105,47 @@ n_2\\
 \]
 
 
-\subsubsection{Option 1: FFT in x-direction } Since our domain has zonal periodicity, we FFT in the $x$-direction. Our original spatial domain from $0^{\circ}$ to $359.75^{\circ}$ longitudes is transformed in the $k-$wave number space. Furthermore, operator $\pd(x)$ is now $ik$. 
-Recall $x[1441]=x[1]$. So, our wave numbers should range from $k=1$ to $k=720$. 
-\[\pd{t}\vec{x} = \hat{L}_k\vec{x}=
-\left[\begin{array}{ccc|ccc}
-0 & \frac{1}{Ro}y & -\frac{1}{Fr^2}ki & 0 & 0 & -\frac{1}{Fr^2}ki \\
--\frac{1}{Ro}y & 0 & -\frac{1}{Fr^2}\pd{y} & 0 & 0 & -\frac{1}{Fr^2}\pd{y}\\
--ki & -\pd{y} & 0 & 0 & 0 & 0 \\ \hline
-0 & 0 & -\frac{1}{Fr^2}ki & 0 & \frac{1}{Ro}y &  -\frac{\alpha}{Fr^2}ki \\
-0 & 0 & -\frac{1}{Fr}\pd{y} & -\frac{1}{Ro}y  & 0&  -\frac{\alpha}{Fr^2}\pd{y} \\
-0 & 0 & 0 & -ki & -\pd{y} & 0
-\end{array}\right] \begin{bmatrix}
-m_1\\
-n_1\\
-\eta_1\\
-m_2\\
-n_2\\
-\eta_2
-\end{bmatrix} = \begin{bmatrix}
-\pd{t}m_1\\
-\pd{t}n_1\\
-\pd{t}\eta_1\\
-\pd{t}m_2\\
-\pd{t}n_2\\
-\pd{t}\eta_2
-\end{bmatrix}
-\]
-
-Goal: Find diagonalization of $\hat{L}_k V =V D_k \Rightarrow \hat{L}_k = V D_k V^{-1} \Rightarrow D_k = V^{-1}\hat{L}_k V$, such that the eigenvectors are independent from $k$.  
-
-If that's possible, then can solve for $\vec{x}^{(n+1)}$:
-\begin{align*}
-\vec{x}^{(n+1)} &= \vec{x}^{(n)}+h\left(L_k(\vec{x}^{(n+1)}) + N(\vec{x}^{(n)}) \right) \\
-(I-h L_k)\vec{x}^{(n+1)} & = h N(\vec{x}^{(n)}) + \vec{x}^{(n)}\\
-V^{-1}(I-h VD_kV^{-1})\vec{x}^{(n+1)} & = V^{-1}RHS\\
-(I-h D_k) (V^{-1})\vec{x}^{(n+1)} & = V^{-1}RHS \\
-\vec{x}^{(n+1)} & = V (I-h D_k)^{-1} V^{-1}RHS 
-\end{align*}
-
-Multiplication of $V$ and $V^{-1}$ can be accelerated using the LU decomposition, and $(I-h D_k)$ is a diagonal matrix, so it is easy to compute the its inverse.
-
-\subsubsection{Option 2: Decouple the two layers by using a transformation of the momenta into barotropic and baroclinic components}
+%\subsubsection{Option 1: FFT in x-direction } Since our domain has zonal periodicity, we FFT in the $x$-direction. Our original spatial domain from $0^{\circ}$ to $359.75^{\circ}$ longitudes is transformed in the $k-$wave number space. Furthermore, operator $\pd(x)$ is now $ik$. 
+%Recall $x[1441]=x[1]$. So, our wave numbers should range from $k=1$ to $k=720$. 
+%\[\pd{t}\vec{x} = \hat{L}_k\vec{x}=
+%\left[\begin{array}{ccc|ccc}
+%0 & \frac{1}{Ro}y & -\frac{1}{Fr^2}ki & 0 & 0 & -\frac{1}{Fr^2}ki \\
+%-\frac{1}{Ro}y & 0 & -\frac{1}{Fr^2}\pd{y} & 0 & 0 & -\frac{1}{Fr^2}\pd{y}\\
+%-ki & -\pd{y} & 0 & 0 & 0 & 0 \\ \hline
+%0 & 0 & -\frac{1}{Fr^2}ki & 0 & \frac{1}{Ro}y &  -\frac{\alpha}{Fr^2}ki \\
+%0 & 0 & -\frac{1}{Fr}\pd{y} & -\frac{1}{Ro}y  & 0&  -\frac{\alpha}{Fr^2}\pd{y} \\
+%0 & 0 & 0 & -ki & -\pd{y} & 0
+%\end{array}\right] \begin{bmatrix}
+%m_1\\
+%n_1\\
+%\eta_1\\
+%m_2\\
+%n_2\\
+%\eta_2
+%\end{bmatrix} = \begin{bmatrix}
+%\pd{t}m_1\\
+%\pd{t}n_1\\
+%\pd{t}\eta_1\\
+%\pd{t}m_2\\
+%\pd{t}n_2\\
+%\pd{t}\eta_2
+%\end{bmatrix}
+%\]
+%
+%Goal: Find diagonalization of $\hat{L}_k V =V D_k \Rightarrow \hat{L}_k = V D_k V^{-1} \Rightarrow D_k = V^{-1}\hat{L}_k V$, such that the eigenvectors are independent from $k$.  
+%
+%If that's possible, then can solve for $\vec{x}^{(n+1)}$:
+%\begin{align*}
+%\vec{x}^{(n+1)} &= \vec{x}^{(n)}+h\left(L_k(\vec{x}^{(n+1)}) + N(\vec{x}^{(n)}) \right) \\
+%(I-h L_k)\vec{x}^{(n+1)} & = h N(\vec{x}^{(n)}) + \vec{x}^{(n)}\\
+%V^{-1}(I-h VD_kV^{-1})\vec{x}^{(n+1)} & = V^{-1}RHS\\
+%(I-h D_k) (V^{-1})\vec{x}^{(n+1)} & = V^{-1}RHS \\
+%\vec{x}^{(n+1)} & = V (I-h D_k)^{-1} V^{-1}RHS 
+%\end{align*}
+%
+%Multiplication of $V$ and $V^{-1}$ can be accelerated using the LU decomposition, and $(I-h D_k)$ is a diagonal matrix, so it is easy to compute the its inverse.
+%
+%\subsubsection{Option 2: Decouple the two layers by using a transformation of the momenta into barotropic and baroclinic components}
 
 \subsubsection{Option 3: Remove Coriolis terms from linear implicit scheme, and FFT in x-direction and DCT/DST in y-direction}
 \begin{itemize}
@@ -170,14 +175,15 @@ Multiplication of $V$ and $V^{-1}$ can be accelerated using the LU decomposition
 	\end{itemize}
 \end{itemize}
 For each $k_x$ and $k_y$ pair, we get the following system.
-\[\pd{t}\vec{x} = \hat{L}_{k_x,k_y}\vec{x}=
+\[\pd{t}\vec{x} = \hat{L}_{k_x,k_y}\vec{x} 
+\]\\\[=
 \left[\begin{array}{ccc|ccc}
-0 & 0 & -\frac{1}{Fr^2}k_xi & 0 & 0 & -\frac{1}{Fr^2}k_xi \\
-0 & 0 & \frac{1}{Fr^2}k_y & 0 & 0 & \frac{1}{Fr^2}k_y\\
--k_xi & -k_y & 0 & 0 & 0 & 0 \\ \hline
-0 & 0 & -\frac{1}{Fr^2}k_xi & 0 & 0 &  -\frac{\alpha}{Fr^2}k_xi \\
-0 & 0 & \frac{1}{Fr^2}k_y & 0  & 0&  \frac{\alpha}{Fr^2}k_y \\
-0 & 0 & 0 & -k_xi & -k_y & 0
+-\frac{\beta}{h}(k_x^2+k_y^2) & 0 & -\frac{1}{Fr^2}k_xi & 0 & 0 & -\frac{1}{Fr^2}k_xi \\
+0 & -\frac{\beta}{h}(k_x^2+k_y^2) & \frac{1}{Fr^2}k_y & 0 & 0 & \frac{1}{Fr^2}k_y\\
+-k_xi & -k_y & -\frac{\beta}{h}(k_x^2+k_y^2) & 0 & 0 & 0 \\ \hline
+0 & 0 & -\frac{1}{Fr^2}k_xi & -\frac{\beta}{h}(k_x^2+k_y^2) & 0 &  -\frac{\alpha}{Fr^2}k_xi \\
+0 & 0 & \frac{1}{Fr^2}k_y & 0  & -\frac{\beta}{h}(k_x^2+k_y^2) &  \frac{\alpha}{Fr^2}k_y \\
+0 & 0 & 0 & -k_xi & -k_y & -\frac{\beta}{h}(k_x^2+k_y^2)
 \end{array}\right] \begin{bmatrix}
 \hat{m}_{1,k_x,k_y}\\
 \hat{n}_{1,k_x,k_y}\\
@@ -207,7 +213,7 @@ That is, we have:
 0 & 0 & 0 & 0 & 0 & \cdots& \hat{L}_{N_x,N_y}
 \end{bmatrix}\]
 
-Let $T$ and $T^{-1}$ represent DFT in $x-$ and DCT/DST in $y-$directions.
+Let $T$ and $T^{-1}$ represent DFT in $x-$ and DCT/DST in $y-$directions, and their inverse transformations.
 We need to solve
 \begin{align*}
 (I-h L)x^{(n+1)} &= x^{(n)} + h N(x^{(n)})\\
@@ -217,56 +223,81 @@ T(I-h L)T^{-1}T x^{(n+1)} &= T\left[x^{(n)} + h N(x^{(n)})\right]\\
 (I-h \hat{L})\hat{x}^{(n+1)}  &=\hat{x}^{(n)} + h TN(x^{(n)})
 \end{align*}
 This leads to solving blocks of all wavenumber pairs simultaneously.
+
 $$
 (I-h \hat{L}_{k_x,k_y})\hat{x}_{k_x,k_y}^{(n+1)}  =\hat{x}_{k_x,k_y}^{(n)} + h TN(x^{(n)})
 $$
+Let $A_{k_x, k_y} := I -  h \hat{L}_{k_x, k_y}$.
+Then, the next time step can be computed as an inverse problem with the operator, $A_{k_x,k_y}$ for all $(k_x,k_y)$ pairs.
 
-We manually compute the LU decomposition by using Gaussian elimination. 
-\[A_{kx, ky} = I -  h \hat{L}_{k_x, k_y}= \begin{bmatrix}
-1 & 0 & h\frac{1}{Fr^2}k_xi & 0 & 0 & h\frac{1}{Fr^2}k_xi \\
-0 & 1 & -h\frac{1}{Fr^2}k_y & 0 & 0 & -h\frac{1}{Fr^2}k_y\\
-hk_xi & hk_y & 1 & 0 & 0 & 0 \\ 
-0 & 0 & h\frac{1}{Fr^2}k_xi & 1 & 0 &  h\frac{\alpha}{Fr^2}k_xi \\
-0 & 0 & -h\frac{1}{Fr^2}k_y & 0  & 1&  -h\frac{\alpha}{Fr^2}k_y \\
-0 & 0 & 0 & hk_xi & hk_y & 1
+$$
+x_{k_x,k_y}^{(n+1)} = T^{-1}\hat{x}_{k_x,k_y}^{(n+1)} = T^{-1} A_{k_x, k_y}^{-1} RHS
+$$
+
+We manually compute the LU decomposition of $A_{k_x, k_y}$ by using Gaussian elimination. 
+\[A_{k_x, k_y} = I -  h \hat{L}_{k_x, k_y}\]\\
+\[= \begin{bmatrix}
+1+\beta(k_x^2+k_y^2) & 0 & h\frac{1}{Fr^2}k_xi & 0 & 0 & h\frac{1}{Fr^2}k_xi \\
+0 & 1+\beta(k_x^2+k_y^2)  & -h\frac{1}{Fr^2}k_y & 0 & 0 & -h\frac{1}{Fr^2}k_y\\
+hk_xi & hk_y & 1+\beta(k_x^2+k_y^2)  & 0 & 0 & 0 \\ 
+0 & 0 & h\frac{1}{Fr^2}k_xi & 1+\beta(k_x^2+k_y^2)  & 0 &  h\frac{\alpha}{Fr^2}k_xi \\
+0 & 0 & -h\frac{1}{Fr^2}k_y & 0  & 1+\beta(k_x^2+k_y^2)  &  -h\frac{\alpha}{Fr^2}k_y \\
+0 & 0 & 0 & hk_xi & hk_y & 1+\beta(k_x^2+k_y^2) 
 \end{bmatrix}\]
 The following steps transform $A$ into an upper triangular form. It essentially performs $U = L^{-1}A$.
 
 The main procedure is as follows:
 $LUx = Ax = b$, where $b$ denotes whatever RHS we have.
-Leting $y = Ux$ gives us $Ly = b$. Solve for $y$ then solve for $x$.
+Letting $y = Ux$ gives us $Ly = b$. 
+Solve for $y$ then solve for $x$.
 Apply $L^{-1}$ to $b$, Then, we are left with $Ux = L^{-1}b$.
 Use backward substitution to solve for $x$.
 
- Let $R_i$ denote the $i^{th}$ row of $A$. Let $a_{k_x, k_y}:= 1+\frac{h^2}{Fr^2}(k_x^2+k_y^2)$, and let $b_{k_x, k_y}:= (a_{k_x, k_y}-1)(\alpha - 1)+\alpha$
+Let $R_i$ denote the $i^{th}$ row of $A$. 
+%Let $a_{k_x, k_y}:= 1+\frac{h^2}{Fr^2}(k_x^2+k_y^2)$, and let $b_{k_x, k_y}:= (a_{k_x, k_y}-1)(\alpha - 1)+\alpha$
+The following functions are defined to somewhat optimize memory vs. computation.
+
+\begin{align*}
+a_0(\vec{k}) &:=\frac{h^2}{Fr}\|\vec{k}\|_2^2\\
+a(\vec{k} &:= (1+\beta\|\vec{k}\|_2^2)^{-1}\\
+c(\vec{k}) &:= (1+\beta\|\vec{k}\|_2^2)^2 \\
+b(\vec{k}) &:= a(\vec{k})(a_0(\vec{k})+c(\vec{k}))\\
+g(\vec{k}) &:= \frac{a_0(\vec{k})}{a_0(\vec{k})+c(\vec{k})} \\
+d(\vec{k}) &:= 1+(\alpha-1)a(\vec{k})^2a_0(\vec{k})+g(\vec{k})\\
+f(\vec{k}) &:= \frac{a(\vec{k})}{a_0(\vec{k})+c(\vec{k})} \left((\alpha-1)a_0(\vec{k}) + \alpha c(\vec{k})\right)
+\end{align*}
 \begin{enumerate}
-	\item $R_3 \gets \frac{1}{a_{k_x, k_y}} \left(R_3 -h \left[i k_x R_1 + k_y R_2\right]\right)$
-	\item $R_4 \gets R_4 - i \frac{h}{Fr^2}k_x R_3$
-	\item $R_5 \gets R_5 + \frac{h}{Fr^2}k_y R_3$
-	\item $R_6 \gets R_6 -h \left[ik_x R_4 +k_y R_5\right]$
+	\item $R_1 \gets a(\vec{k}) R_1$
+	\item $R_2 \gets a(\vec{k}) R_2$
+	\item $R_3 \gets \frac{1}{b(\vec{k})}[R_3-h\left(ik_xR_1 +k_yR_2\right)]$
+	\item $R_4 \gets a(\vec{k})[R_4-\frac{ihk_x}{Fr^2}R_3]$
+	\item $R_5 \gets a(\vec{k})[R_5+\frac{hk_y}{Fr^2}R_3]$
+	\item $R_6 \gets a(\vec{k})[R_6-h\left(ik_xR_4 +k_yR_5\right)]$
 \end{enumerate}
 The resulting matrix is: \[U = L^{-1}A = 
 \begin{bmatrix}
-1 & 0 & i \frac{h}{Fr^2}k_x & 0 & 0 & i \frac{h}{Fr^2}k_x \\
-0 & 1 & -\frac{h}{Fr^2}k_y & 0 & 0 & -\frac{h}{Fr^2}k_y \\
-0 & 0 & 1 & 0 & 0 & 1 -\frac{1}{a_{k_x, k_y}} \\ 
-0 & 0 & 0 & 1 & 0 & i \frac{h}{Fr^2}k_x \frac{b_{k_x,k_y}}{a_{k_x, k_y}} \\
-0 & 0 & 0 & 0 & 1 & -\frac{h}{Fr^2}k_y \frac{b_{k_x, k_y}}{a_{k_x, k_y}} \\
-0 & 0 & 0 & 0 & 0 & \frac{1+(a_{k_x, k_y}-1)(1+b_{k_x, k_y})}{a_{k_x, k_y}}
+1 & 0 & i \frac{h}{Fr^2}k_xa(\vec{k}) & 0 & 0 & i\frac{h}{Fr^2}k_xa(\vec{k}) \\
+0 & 1 & -\frac{h}{Fr^2}k_ya(\vec{k}) & 0 & 0 & -\frac{h}{Fr^2}k_ya(\vec{k}) \\
+0 & 0 & 1 & 0 & 0 & g(\vec{k}) \\ 
+0 & 0 & 0 & 1 & 0 & i \frac{h}{Fr^2}k_x f(\vec{k}) \\
+0 & 0 & 0 & 0 & 1 & -\frac{h}{Fr^2}k_y f(\vec{k}) \\
+0 & 0 & 0 & 0 & 0 & d(\vec{k})
 \end{bmatrix}\] 
 The total set of operations is given below.
+Recall:
+$A\mbfg{x}=\mbfr{b} = LU\mbfb{y}$
 \begin{enumerate}
-	\item $\mbfb{y_1}\gets \mbfr{b_1}$ (No need to store this separately.)
-	\item $\mbfb{y_2}\gets \mbfr{b_2}$ (No need to store this separately.)
-	\item $\mbfb{y_3} \gets \frac{1}{a_{k_x, k_y}} \left(\mbfr{b_3} -h \left[i k_x \mbfb{y_1} + k_y \mbfb{y_2}\right]\right)$ \\ 
-	$\mbfb{y_3} \gets \frac{1}{a_{k_x, k_y}} \left(\mbfr{b_3} -h \left[i k_x \mbfr{b_1} + k_y \mbfr{b_2}\right]\right)$ 
-	\item $\mbfb{y_4} \gets \mbfr{b_4} - i \frac{h}{Fr^2}k_x \mbfb{y_3}$
-	\item $\mbfb{y_5} \gets \mbfr{b_5} + \frac{h}{Fr^2}k_y \mbfb{y_3}$
-	\item $\mbfb{y_6} \gets \mbfr{b_6} -h \left[ik_x \mbfb{y_4} +k_y\mbfb{y_5}\right]$
-	\item $\mbfg{x_6} \gets \frac{a_{k_x, k_y}}{1+(a_{k_x, k_y}-1)(1+b_{k_x, k_y})}\mbfb{y_6}$
-	\item $\mbfg{x_5} \gets \mbfb{y_5} +\frac{h}{Fr^2}k_y \frac{b_{k_x,k_y}}{a_{k_x,k_y}}\mbfg{x_6}$
-	\item $\mbfg{x_4} \gets \mbfb{y_4} - i \frac{h}{Fr^2}k_x\frac{b_{k_x,k_y}}{a_{k_x,k_y}}\mbfg{x_6}$
-	\item $\mbfg{x_3} \gets \mbfb{y_3} - \left(1-\frac{1}{a_{k_x,k_y}}\right)\mbfg{x_6}$
+	\item $\mbfb{y_1}\gets a\mbfr{b_1}$ (No need to store separately.)
+	\item $\mbfb{y_2}\gets a \mbfr{b_2}$ (No need to store separately.)
+	\item $\mbfb{y_3} \gets \frac{1}{b} \left(\mbfr{b_3} -h \left[i k_x \mbfb{y_1} + k_y \mbfb{y_2}\right]\right)$ \\ 
+	$\mbfb{y_3} \gets \frac{a}{b} \left(\mbfr{b_3} -h \left[i k_x \mbfr{b_1} + k_y \mbfr{b_2}\right]\right)$ 
+	\item $\mbfb{y_4} \gets a(\mbfr{b_4} - i \frac{h}{Fr^2}k_x \mbfb{y_3})$
+	\item $\mbfb{y_5} \gets a(\mbfr{b_5} + \frac{h}{Fr^2}k_y \mbfb{y_3})$
+	\item $\mbfb{y_6} \gets a(\mbfr{b_6} -h \left[ik_x \mbfb{y_4} +k_y\mbfb{y_5}\right])$
+	\item $\mbfg{x_6} \gets \frac{1}{d}\mbfb{y_6}$
+	\item $\mbfg{x_5} \gets \mbfb{y_5} +\frac{h}{Fr^2}k_yf\mbfg{x_6}$
+	\item $\mbfg{x_4} \gets \mbfb{y_4} - i \frac{h}{Fr^2}k_xf\mbfg{x_6}$
+	\item $\mbfg{x_3} \gets \mbfb{y_3} - g\mbfg{x_6}$
 	\item $\mbfg{x_2}\gets \mbfb{y_2} + \frac{h}{Fr^2}k_y(\mbfg{x_3}+\mbfg{x_6})$
 	\item $\mbfg{x_1} \gets \mbfb{y_1} - i \frac{h}{Fr^2}k_x(\mbfg{x_3}+\mbfg{x_6})$
 \end{enumerate}
@@ -274,50 +305,17 @@ The total set of operations is given below.
 Simplified:
 
 \begin{enumerate}
-	\item $\mbfb{y_3}\gets \frac{1}{a_{k_x, k_y}} \left(\mbfr{b_3} -h \left[i k_x \mbfr{b_1} + k_y \mbfr{b_2}\right]\right)$ 
-	\item $\mbfb{y_4} \gets \mbfr{b_4} - i \frac{h}{Fr^2}k_x \mbfb{y_3}$
-	\item $\mbfb{y_5} \gets \mbfr{b_5} + \frac{h}{Fr^2}k_y \mbfb{y_3}$
-	\item $\mbfb{y_6} \gets \mbfr{b_6} -h \left[ik_x \mbfb{y_4} +k_y\mbfb{y_5}\right]$
-	\item $\mbfg{x_6} \gets \frac{a_{k_x, k_y}}{1+(a_{k_x, k_y}-1)(1+b_{k_x, k_y})}\mbfb{y_6}$
-	\item $\mbfg{x_5} \gets \mbfb{y_5} +\frac{h}{Fr^2}k_y \frac{b_{k_x,k_y}}{a_{k_x,k_y}}\mbfg{x_6}$
-	\item $\mbfg{x_4} \gets \mbfb{y_4} - i \frac{h}{Fr^2}k_x\frac{b_{k_x,k_y}}{a_{k_x,k_y}}\mbfg{x_6}$
-	\item $\mbfg{x_3} \gets \mbfb{y_3} - \left(1-\frac{1}{a_{k_x,k_y}}\right)\mbfg{x_6}$
-	\item $\mbfg{x_2}\gets \mbfr{b_2} + \frac{h}{Fr^2}k_y(\mbfg{x_3}+\mbfg{x_6})$
-	\item $\mbfg{x_1} \gets \mbfr{b_1} - i \frac{h}{Fr^2}k_x(\mbfg{x_3}+\mbfg{x_6})$
+	\item $\mbfb{y_3} \gets \mbfb{y_3} \gets \frac{a}{b} \left(\mbfr{b_3} -h \left[i k_x \mbfr{b_1} + k_y \mbfr{b_2}\right]\right)$ 
+	\item $\mbfb{y_4} \gets a(\mbfr{b_4} - i \frac{h}{Fr^2}k_x \mbfb{y_3})$
+	\item $\mbfb{y_5} \gets a(\mbfr{b_5} + \frac{h}{Fr^2}k_y \mbfb{y_3})$
+	\item $\mbfg{x_6} \gets \frac{a}{d}(\mbfr{b_6} -h \left[ik_x \mbfb{y_4} +k_y\mbfb{y_5}\right])$
+	\item $\mbfg{x_5} \gets \mbfb{y_5} +\frac{h}{Fr^2}k_yf\mbfg{x_6}$
+	\item $\mbfg{x_4} \gets \mbfb{y_4} - i \frac{h}{Fr^2}k_xf\mbfg{x_6}$
+	\item $\mbfg{x_3} \gets \mbfb{y_3} - g\mbfg{x_6}$
+	\item $\mbfg{x_2}\gets \mbfb{y_2} + \frac{h}{Fr^2}k_y(\mbfg{x_3}+\mbfg{x_6})$
+	\item $\mbfg{x_1} \gets \mbfb{y_1} - i \frac{h}{Fr^2}k_x(\mbfg{x_3}+\mbfg{x_6})$
 \end{enumerate}
-
-ALTERNATIVELY:
-
- Let $R_i$ denote the $i^{th}$ row of $A$. Let $a_{k_x, k_y}:= \frac{1}{1+\frac{h^2}{Fr^2}(k_x^2+k_y^2)}$, and let $b_{k_x, k_y}:= (\frac{1}{a_{k_x, k_y}}-1)(\alpha - 1)+\alpha$
-\begin{enumerate}
-	\item $R_3 \gets a_{k_x, k_y} \left(R_3 -h \left[i k_x R_1 + k_y R_2\right]\right)$
-	\item $R_4 \gets R_4 - i \frac{h}{Fr^2}k_x R_3$
-	\item $R_5 \gets R_5 + \frac{h}{Fr^2}k_y R_3$
-	\item $R_6 \gets R_6 -h \left[ik_x R_4 +k_y R_5\right]$
-\end{enumerate}
-The resulting matrix is: \[U = L^{-1}A = 
-\begin{bmatrix}
-1 & 0 & i \frac{h}{Fr^2}k_x & 0 & 0 & i \frac{h}{Fr^2}k_x \\
-0 & 1 & -\frac{h}{Fr^2}k_y & 0 & 0 & -\frac{h}{Fr^2}k_y \\
-0 & 0 & 1 & 0 & 0 & 1- a_{k_x, k_y} \\ 
-0 & 0 & 0 & 1 & 0 & i \frac{h}{Fr^2}k_x a_{k_x, k_y}b_{k_x,k_y} \\
-0 & 0 & 0 & 0 & 1 & -\frac{h}{Fr^2}k_y  a_{k_x, k_y}b_{k_x,k_y}\\
-0 & 0 & 0 & 0 & 0 & a_{k_x, k_y}[1+(\frac{1}{a_{k_x, k_y}}-1)(1+b_{k_x, k_y})]
-\end{bmatrix}\] 
-The total set of operations is given below.
-
-\begin{enumerate}
-	\item $\mbfb{y_3}\gets a_{k_x, k_y} \left(\mbfr{b_3} -h \left[i k_x \mbfr{b_1} + k_y \mbfr{b_2}\right]\right)$ 
-	\item $\mbfb{y_4} \gets \mbfr{b_4} - i \frac{h}{Fr^2}k_x \mbfb{y_3}$
-	\item $\mbfb{y_5} \gets \mbfr{b_5} + \frac{h}{Fr^2}k_y \mbfb{y_3}$
-	\item $\mbfb{y_6} \gets \mbfr{b_6} -h \left[ik_x \mbfb{y_4} +k_y\mbfb{y_5}\right]$
-	\item $\mbfg{x_6} \gets \frac{y_6}{a_{k_x, k_y}[1+(\frac{1}{a_{k_x, k_y}}-1)(1+b_{k_x, k_y})]}$
-	\item $\mbfg{x_5} \gets \mbfb{y_5} +\frac{h}{Fr^2}k_y a_{k_x, k_y}b_{k_x,k_y}\mbfg{x_6}$
-	\item $\mbfg{x_4} \gets \mbfb{y_4} - i \frac{h}{Fr^2}k_xa_{k_x, k_y}b_{k_x,k_y}\mbfg{x_6}$
-	\item $\mbfg{x_3} \gets \mbfb{y_3} - \left(1-a_{k_x,k_y}\right)\mbfg{x_6}$
-	\item $\mbfg{x_2}\gets \mbfr{b_2} + \frac{h}{Fr^2}k_y(\mbfg{x_3}+\mbfg{x_6})$
-	\item $\mbfg{x_1} \gets \mbfr{b_1} - i \frac{h}{Fr^2}k_x(\mbfg{x_3}+\mbfg{x_6})$
-\end{enumerate}
-Since $(i \frac{h}{Fr^2} k_x, \frac{h}{Fr^2}k_y)$ appear more often than $(kx, ky)$, we will store those values for coding purposes. 
+Some other speed-ups include storing $(i \frac{h}{Fr^2} k_x$ and $ \frac{h}{Fr^2}k_y)$ instead of $k_x$ and $k_y$, and storing $b$ and $d$ as their reciprocals to have more multiplications instead of divisions. 
+Note that you only need the following matrices: $i \frac{h}{Fr^2} k_x, \frac{h}{Fr^2}k_y, a, b^{-1}, d^{-1}, f, g$.
 
 \end{document}
