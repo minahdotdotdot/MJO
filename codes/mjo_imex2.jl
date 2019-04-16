@@ -283,23 +283,24 @@ function feEXNL(params::MJO_params, state::MJO_State, tend::MJO_State, h_time::F
     return state + h_time*tend
 end
 
-@inline function imex_init(params::MJO_params, h_time::Float64, bb::Float64)
+@inline function imex_init(params::MJO_params, h_time::Float64, bb::Float64; H1::Float64=1.0)
     grid_x2 = Int(grid_x/2+1);
     kx = ((params.LL/params.RE )* 
     repeat(range(0, stop=grid_x2-1)', grid_y-1,1));
     ky = ((9/2 * params.LL/params.RE)*
     repeat(range(0, stop=grid_y-2), 1,grid_x2));
 
-    aa = (h_time^2 * params.Fr)*(kx.^2 + ky.^2);
+    aa = H1 * (h_time^2 * params.Fr)*(kx.^2 + ky.^2);
     c = 1 .+ bb * (kx.^2 + ky.^2)
     ak = 1 ./ c; c = c.^2;
     b = 1 ./  (ak .*(aa + c)); # actually 1./b
     g = aa ./(aa + c)
     d = ak ./(1 .+ (-1 + params.AA)* ak.^2 .* aa .+ g) # actually ak ./d
-    f = (ak .*((-1 + params.AA)*aa .+ params.AA*c))./ (aa .+ c)
+    #f = (ak .*((-1 + params.AA)*aa .+ params.AA*c))./ (aa .+ c)
+    f = ak .* (params.AA- g)
 
-    kx = (im*h_time*params.Fr) * kx;
-    ky = (h_time*params.Fr) * ky
+    kx = H1 * (im*h_time*params.Fr) * kx;
+    ky = H1 * (h_time*params.Fr) * ky
     return kx, ky, ak, b, d, f, g
 end
 

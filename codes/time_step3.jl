@@ -140,15 +140,15 @@ end
 
     # Implicit solve
     # Applying Lower^{-1}
-    outhat.m1[:,:] = a .* RHShat.m1;
-    outhat.n1[:,:] = a .* RHShat.n1;
-    outhat.h1[:,:] = b .*(RHShat.h1 - (1/params.Fr) * (
+    #outhat.m1[:,:] = a .* RHShat.m1;
+    #outhat.n1[:,:] = a .* RHShat.n1;
+    outhat.h1[:,:] = b .*(RHShat.h1 - (1/(params.Fr*H1)) * a .*(
         kx .*outhat.m1 + ky.*outhat.n1)); # b is actually 1/b
     outhat.m2[:,:] = a .* (RHShat.m2 - kx .* outhat.h1);
     outhat.n2[:,:] = a .* (RHShat.n2 + ky .* outhat.h1);
     outhat.h2[:,:] = (
         d .* (RHShat.h2 - 
-        (1/params.Fr)* (kx .* outhat.m2 + ky .* outhat.n2))
+        (1/(params.Fr*H1))* (kx .* outhat.m2 + ky .* outhat.n2))
         ); # d is actually a/d
 
     # Backward Substitution.
@@ -156,8 +156,8 @@ end
     outhat.n2[:,:] = outhat.n2 .+ ky .* f.* outhat.h2;
     outhat.m2[:,:] = outhat.m2 -  kx .* f.* outhat.h2;
     outhat.h1[:,:] = outhat.h1 - g .* outhat.h2;
-    outhat.n1[:,:] = outhat.n1 + ky.*a.*(outhat.h1 + outhat.h2);
-    outhat.m1[:,:] = outhat.m1 - kx.*a.*(outhat.h1 + outhat.h2);
+    outhat.n1[:,:] = a .*(RHShat.n1 + ky.*(outhat.h1 + outhat.h2));
+    outhat.m1[:,:] = a .*(RHShat.m1 - kx.*(outhat.h1 + outhat.h2));
 
     # Into Physical Space
     idcsft(exstate, outhat)
@@ -264,7 +264,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     state  = deepcopy(IC);     exstate = deepcopy(IC);
     RHShat = deepcopy(IChat);  outhat  = deepcopy(IChat);
     bb     = bb*h_time; #input bb should be the actual diffusion constant: K = bb/h_time.
-    kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
+    kx, ky, a, b, d, f, g = imex_init(params, h_time, bb, H1=H1);
     tendlist = Array{MJO_State,1}(undef, 1); start = 2;
     tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time, H1=H1);
     pad=ceil(Int,log10(N/every));
@@ -276,7 +276,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
             exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true, H1=H1);
             #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
             exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q)) #7.45
-            state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
+            state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g, H1=H1)
         end
         start = step+1
     end
@@ -284,7 +284,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time, H1=H1)
         exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q)) #7.45
         #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
-        state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
+        state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g, H1=H1)
         if rem(i, every) ==1
             saveimshow(state, name*string(1+div(i,every), pad=pad), loc=loc, params=params, H1=H1)
         end
