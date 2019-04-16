@@ -134,7 +134,8 @@ end
     params::MJO_params, h_time::Float64,
     kx::Array{Complex{Float64},2}, ky::Array{Float64,2}, 
     a::Array{Float64,2}, b::Array{Float64,2}, d::Array{Float64,2},
-    f::Array{Float64,2}, g::Array{Float64,2})
+    f::Array{Float64,2}, g::Array{Float64,2};
+    H1::Float64=1.0)
     # Into Fourier/Cos/Sin Space
     dcsft(exstate, RHShat)
 

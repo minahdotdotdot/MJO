@@ -220,7 +220,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
 
         # Iterate over latitudinal direction.
         for jj = 2:length(params.y)-1
-            value_P_RC = P_RC(LL, UU, QQ, B, Qs, state.q[jj,ii], T_Q, BQH, Tratio, state.h2[jj,ii], state.h1[jj,ii],PP)
+            value_P_RC = P_RC(LL, UU, QQ, B, Qs, state.q[jj,ii], T_Q, BQH, Tratio, state.h2[jj,ii], state.h1[jj,ii],PP, H1=H1)
 
             ### MOMENTUM
 
@@ -297,7 +297,7 @@ end
     g = aa ./(aa + c)
     d = ak ./(1 .+ (-1 + params.AA)* ak.^2 .* aa .+ g) # actually ak ./d
     #f = (ak .*((-1 + params.AA)*aa .+ params.AA*c))./ (aa .+ c)
-    f = ak .* (params.AA- g)
+    f = ak .* (params.AA .- g)
 
     kx = H1 * (im*h_time*params.Fr) * kx;
     ky = H1 * (h_time*params.Fr) * ky
