@@ -305,12 +305,12 @@ end
 end
 
 @inline function genRandfield(;grid_y::Int64=162, grid_x::Int64=1440)
-    R = randn(grid_y+2, grid_x); # [1 2 1] + [1 2 1]^T--> sqrt(1^2 + 4^2)=sqrt(20)
-    return (1/sqrt(20)*
-    (4 * R[2:end-1,:]
+    R = randn(grid_y+2, grid_x); 
+    R = 2*R[2:end-1,:] + R[1:end-2,:] + R[3:end,:]
+    return (1/6*
+    (   R[2:end-1,:]
         + hcat(R[2:end-1,2:end], R[2:end-1,1]) 
         + hcat(R[2:end-1, end], R[2:end-1, 1:end-1]) 
-        + R[1:end-2,:]+ R[3:end,:])
     )
 end
 
