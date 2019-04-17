@@ -216,6 +216,7 @@ function imex(N::Int, every::Int, h_time::Float64;
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step], H1::Float64=1.0)
     params = gen_params(h_time);
     ch_params!(params, X, x); #Change params field X into value x. 
+    ch_params!(params, :AA, AAval(H1=H1)) #Change alpha param to match H1.
     IC     = genInitSr(scheme="imex");
     IChat  = genInitSr(scheme="im");
     state  = deepcopy(IC);     exstate = deepcopy(IC);
@@ -260,6 +261,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step], H1::Float64=1.0)
     params = gen_params(h_time);
     ch_params!(params, X, x); #Change params field X into value x. 
+    ch_params!(params, :AA, AAval(H1=H1)) #Change alpha param to match H1.
     IC     = genInitSr(scheme="imex");
     IChat  = genInitSr(scheme="im");
     state  = deepcopy(IC);     exstate = deepcopy(IC);
@@ -276,14 +278,14 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
         for i = 2 : step
             exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true, H1=H1);
             #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
-            exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q)) #7.45
+            exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*genRandfield() #7.45
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g, H1=H1)
         end
         start = step+1
     end
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time, H1=H1)
-        exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q)) #7.45
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*genRandfield() #7.45
         #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g, H1=H1)
         if rem(i, every) ==1

@@ -98,11 +98,11 @@ end
 ## Precipitation and Radiative Cooling together (RC never appears on its own.)
 @inline function P_RC(
         LL::T, UU::T, QQ::T, B::T, Qs::T, q::T, T_Q::T, BQH::T, Tratio::T, hh2::T, hh1::T,
-        PP::T; H1::Float64=1.0) where T<:Real
+        PP::T) where T<:Real
     value = BQH*P(LL, UU, QQ, B, Qs, q, T_Q,PP)
     #H2 = 2 - H1 
-    if (2 - 2*H1 + hh2 - hh1) > T(0)
-        value = value - Tratio * (2 - 2*H1+hh2-hh1)
+    if (hh2 - hh1) > T(0)
+        value = value - Tratio * (hh2-hh1)
     end
     return value
 end
@@ -220,7 +220,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
 
         # Iterate over latitudinal direction.
         for jj = 2:length(params.y)-1
-            value_P_RC = P_RC(LL, UU, QQ, B, Qs, state.q[jj,ii], T_Q, BQH, Tratio, state.h2[jj,ii], state.h1[jj,ii],PP, H1=H1)
+            value_P_RC = P_RC(LL, UU, QQ, B, Qs, state.q[jj,ii], T_Q, BQH, Tratio, state.h2[jj,ii], state.h1[jj,ii],PP)
 
             ### MOMENTUM
 
@@ -302,6 +302,21 @@ end
     kx = H1 * (im*h_time*params.Fr) * kx;
     ky = H1 * (h_time*params.Fr) * ky
     return kx, ky, ak, b, d, f, g
+end
+
+@inline function genRandfield(;grid_y::Int64=162, grid_x::Int64=1440)
+    R = randn(grid_y+2, grid_x); # [1 2 1] + [1 2 1]^T--> sqrt(1^2 + 4^2)=sqrt(20)
+    return (1/sqrt(20)*
+    (4 * R[2:end-1,:]
+        + hcat(R[2:end-1,2:end], R[2:end-1,1]) 
+        + hcat(R[2:end-1, end], R[2:end-1, 1:end-1]) 
+        + R[1:end-2,:]+ R[3:end,:])
+    )
+end
+
+@inline function AAval(;H1::Float64=1.0, g::Float64=9.80665, HH::Float64=5000.0)
+    He = HH*H1*(1-.5*H1)
+    return g*He/(g*He-22^2)
 end
 
 #=
