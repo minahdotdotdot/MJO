@@ -245,6 +245,10 @@ function imex(N::Int, every::Int, h_time::Float64;
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
         state.q[state.q .< 0.] .= 0.
         if rem(i, every) ==1
+            if istherenan(state)==true || isthereinf(state)==true
+                print(i)
+                return evol[1:div(i, every)]
+            end
             evol[1+div(i,every)] = state
             @printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         end
@@ -295,7 +299,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
         if rem(i, every) ==1
             if istherenan(state)==true || isthereinf(state)==true
                 @printf("H1=%4.2e at %dth step.\n",H1,i)
-                return evol[1:div(i, every)]
+                return 0
             end
             saveimshow(state, name*string(1+div(i,every), pad=pad), loc=loc, params=params, H1=H1)
         end
