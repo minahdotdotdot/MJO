@@ -224,7 +224,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
 
             ### MOMENTUM
 
-            out.m1[jj,ii] = (
+            out.m1[jj,ii] = ( -2.5*state.m1[jj,ii]
                 - div_flux(state.m1, state.n1, state.h1, state.m1, ii, iii, iiii, jj, delt_x, delt_y, H=H1)
                 + params.Ro*params.y[jj]*state.n1[jj,ii]                             #=+1/Ro*n1=#
                 - params.Fr*(
@@ -233,7 +233,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
                 - state.m1[jj,ii]/(H1+state.h1[jj,ii])*value_P_RC
                 )
 
-            out.n1[jj,ii] = (
+            out.n1[jj,ii] = ( -2.5*state.n1[jj,ii]
                 - div_flux(state.m1, state.n1, state.h1, state.n1, ii, iii, iiii, jj, delt_x, delt_y, H=H1)
                 - params.Ro*params.y[jj]*state.m1[jj,ii]                             #=-1/Ro*m1=#
                 - params.Fr*(
@@ -305,12 +305,12 @@ end
 end
 
 @inline function genRandfield(;grid_y::Int64=162, grid_x::Int64=1440)
-    R = randn(grid_y+2, grid_x); # [1 2 1] + [1 2 1]^T--> sqrt(1^2 + 4^2)=sqrt(20)
-    return (1/sqrt(20)*
-    (4 * R[2:end-1,:]
+    R = randn(grid_y+2, grid_x); 
+    R = 2*R[2:end-1,:] + R[1:end-2,:] + R[3:end,:]
+    return (1/6*
+    (   R[2:end-1,:]
         + hcat(R[2:end-1,2:end], R[2:end-1,1]) 
         + hcat(R[2:end-1, end], R[2:end-1, 1:end-1]) 
-        + R[1:end-2,:]+ R[3:end,:])
     )
 end
 

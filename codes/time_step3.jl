@@ -232,16 +232,18 @@ function imex(N::Int, every::Int, h_time::Float64;
         for i = 2 : step
             exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true, H1=H1);
             #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
-            exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q))#7.45
+            exstate.q[:,:] = exstate.q + sqrt(h_time)*1.5*tanh.(3.0*exstate.q).*randn(size(exstate.q))
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
+            state.q[state.q .< 0.] .= 0.
         end
         start = step+1
     end
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time, H1=H1)
-        exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*randn(size(exstate.q))#7.45
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*1.5*tanh.(3.0*exstate.q).*randn(size(exstate.q))
         #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
+        state.q[state.q .< 0.] .= 0.
         if rem(i, every) ==1
             evol[1+div(i,every)] = state
             @printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
@@ -278,16 +280,18 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
         for i = 2 : step
             exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true, H1=H1);
             #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
-            exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*genRandfield() #7.45
+            exstate.q[:,:] = exstate.q + sqrt(h_time)*1.5*tanh.(3.0*exstate.q).*genRandfield() #7.45
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g, H1=H1)
+            state.q[state.q .< 0.] .= 0.
         end
         start = step+1
     end
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time, H1=H1)
-        exstate.q[:,:] = exstate.q + sqrt(h_time)*0.00745*tanh.(3.0*exstate.q).*genRandfield() #7.45
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*1.5*tanh.(3.0*exstate.q).*genRandfield() 
         #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g, H1=H1)
+        state.q[state.q .< 0.] .= 0.
         if rem(i, every) ==1
             if istherenan(state)==true || isthereinf(state)==true
                 @printf("H1=%4.2e at %dth step.\n",H1,i)
