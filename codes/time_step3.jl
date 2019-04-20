@@ -213,7 +213,8 @@ Adams-Bashford with n steps (abn_step) =#
 function imex(N::Int, every::Int, h_time::Float64; 
     bb::Float64=0.001, multistep::Bool=true, step::Int=1, exscheme::Function=ab1_step,
     X=:g, x=9.80665,
-    msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step], H1::Float64=1.0)
+    msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step], 
+    H1::Float64=1.0, NA::Float64=1.5)
     params = gen_params(h_time);
     ch_params!(params, X, x); #Change params field X into value x. 
     ch_params!(params, :AA, AAval(H1=H1)) #Change alpha param to match H1.
@@ -232,7 +233,7 @@ function imex(N::Int, every::Int, h_time::Float64;
         for i = 2 : step
             exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true, H1=H1);
             #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
-            exstate.q[:,:] = exstate.q + sqrt(h_time)*1.5*tanh.(3.0*exstate.q).*randn(size(exstate.q))
+            exstate.q[:,:] = exstate.q + sqrt(h_time)*NA*tanh.(3.0*exstate.q).*randn(size(exstate.q))
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g)
             state.q[state.q .< 0.] .= 0.
         end
@@ -240,7 +241,7 @@ function imex(N::Int, every::Int, h_time::Float64;
     end
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time, H1=H1)
-        exstate.q[:,:] = exstate.q + sqrt(h_time)*1.5*tanh.(3.0*exstate.q).*randn(size(exstate.q))
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*NA*tanh.(3.0*exstate.q).*randn(size(exstate.q))
         #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g)
         state.q[state.q .< 0.] .= 0.
@@ -264,7 +265,8 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     bb::Float64=0.001, multistep::Bool=true, step::Int=3, exscheme::Function=ab1_step,
     X=:g, x=9.80665,
     loc::String="../movies/",
-    msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step], H1::Float64=1.0)
+    msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step],
+    H1::Float64=1.0, NA::Float64=1.5)
     params = gen_params(h_time);
     ch_params!(params, X, x); #Change params field X into value x. 
     ch_params!(params, :AA, AAval(H1=H1)) #Change alpha param to match H1.
@@ -284,7 +286,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
         for i = 2 : step
             exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true, H1=H1);
             #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
-            exstate.q[:,:] = exstate.q + sqrt(h_time)*1.5*tanh.(3.0*exstate.q).*genRandfield() #7.45
+            exstate.q[:,:] = exstate.q + sqrt(h_time)*NA*tanh.(3.0*exstate.q).*genRandfield() #7.45
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g, H1=H1)
             state.q[state.q .< 0.] .= 0.
         end
@@ -292,7 +294,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     end
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time, H1=H1)
-        exstate.q[:,:] = exstate.q + sqrt(h_time)*1.5*tanh.(3.0*exstate.q).*genRandfield() 
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*NA*tanh.(3.0*exstate.q).*genRandfield() 
         #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g, H1=H1)
         state.q[state.q .< 0.] .= 0.
