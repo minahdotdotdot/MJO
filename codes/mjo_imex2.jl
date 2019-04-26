@@ -269,7 +269,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
 
             ### MOISTURE
             out.q[jj,ii] = (
-                - div_flux(state.m1, state.n1, state.h1, state.q, ii, iii, iiii, jj, delt_x, delt_y)
+                - div_flux(state.m1, state.n1, state.h1, state.q, ii, iii, iiii, jj, delt_x, delt_y, H=H1)
                 +(-1.0+Qs./(DD*state.q[jj,ii]))*P(LL,UU,QQ,B,Qs,state.q[jj,ii], T_Q,PP) #=\hat{P}(Q)=#
                 + KK*diffusion(state.q, ii, iii, iiii, jj, delt_x, delt_y)
                 )
