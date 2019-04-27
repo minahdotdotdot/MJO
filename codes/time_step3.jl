@@ -137,7 +137,7 @@ end
     f::Array{Float64,2}, g::Array{Float64,2};
     H1::Float64=1.0)
     # Into Fourier/Cos/Sin Space
-    dcsft(exstate, RHShat)
+    dcsft(exstate, RHShat, params.grid_x)
 
     # Implicit solve
     # Applying Lower^{-1}
@@ -161,7 +161,7 @@ end
     outhat.m1[:,:] = a .*(RHShat.m1 - kx.*(outhat.h1 + outhat.h2));
 
     # Into Physical Space
-    idcsft(exstate, outhat)
+    idcsft(exstate, outhat, params.grid_x)
     return exstate
 end
 #########################
@@ -181,8 +181,7 @@ function f_euler(initial_state:: MJO_State, params::MJO_params, h::Float64, N::I
         state = state + h * tend;
         if rem(i,every) == 1
             evol[1+div(i, every)] = state
-        end
-        
+        end  
     end
     return evol
 end
@@ -262,7 +261,7 @@ end
 ###################
 
 function imex_print(N::Int, every::Int, h_time::Float64, name::String; 
-    bb::Float64=0.001, multistep::Bool=true, step::Int=3, exscheme::Function=ab1_step,
+    bb::Float64=0.005, multistep::Bool=true, step::Int=3, exscheme::Function=ab1_step,
     X=:g, x=9.80665,
     loc::String="../movies/",
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step],
@@ -270,8 +269,8 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     params = gen_params(h_time);
     ch_params!(params, X, x); #Change params field X into value x. 
     ch_params!(params, :AA, AAval(H1=H1)) #Change alpha param to match H1.
-    IC     = genInitSr(scheme="imex");
-    IChat  = genInitSr(scheme="im");
+    IC     = genInitSr(params, scheme="imex");
+    IChat  = genInitSr(params, scheme="im");
     state  = deepcopy(IC);     exstate = deepcopy(IC);
     RHShat = deepcopy(IChat);  outhat  = deepcopy(IChat);
     bb     = bb*h_time; #input bb should be the actual diffusion constant: K = bb/h_time.
@@ -286,7 +285,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
         for i = 2 : step
             exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true, H1=H1);
             #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
-            exstate.q[:,:] = exstate.q + sqrt(h_time)*NA*tanh.(3.0*exstate.q).*genRandfield() #7.45
+            exstate.q[:,:] = exstate.q + sqrt(h_time)*NA*tanh.(3.0*exstate.q).*genRandfield(grid_y=params.grid_y, grid_x=params.grid_x) #7.45
             state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g, H1=H1)
             state.q[state.q .< 0.] .= 0.
         end
@@ -294,7 +293,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     end
     for i = start : N+1
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time, H1=H1)
-        exstate.q[:,:] = exstate.q + sqrt(h_time)*NA*tanh.(3.0*exstate.q).*genRandfield() 
+        exstate.q[:,:] = exstate.q + sqrt(h_time)*NA*tanh.(3.0*exstate.q).*genRandfield(grid_y=params.grid_y, grid_x=params.grid_x) 
         #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
         state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g, H1=H1)
         state.q[state.q .< 0.] .= 0.
@@ -309,8 +308,6 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
 end
 
 function hovmoller(evol::Array{MJO_State,1}, f::Symbol; loc::String="../movies/")
-    grid_x  = 1440;
-    grid_y  = 162;
     equator = Int(grid_y/2)
     toprint = Array{Float64,2}(undef,length(evol),grid_x);
     for i = 1 : length(evol)

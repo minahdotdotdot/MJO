@@ -102,7 +102,7 @@ end
             evolfield = getproperty(state,f)[2:end-1, :];
         end
         fig, ax = subplots(); 
-        getproperty(fig, :set_size_inches)((13,2))
+        getproperty(fig, :set_size_inches)((10,6)) #(13,2)
         getproperty(ax, :set_aspect)("equal")
         #fig[:set_size_inches](13,2); 
         #ax[:set_aspect]("equal");
@@ -112,7 +112,7 @@ end
         #    ax[:imshow](
                 evolfield,
                 cmap=cm,
-                extent=(0, 360, -20, 20)
+                extent=(params.lon_range[1], params.lon_range[2], params.lat_range[1], params.lat_range[2], )#(0, 360, -20, 20)
             )
         );
         savefig(

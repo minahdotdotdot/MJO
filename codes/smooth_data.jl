@@ -79,7 +79,7 @@ function smoother(q::Array{T,2};
         return smoothed
     end
 end
-
+#=
 using GaussianRandomFields, PyPlot
 function genRandField(smoothness::T; nu::Float64=2.0,
     x=range(0,stop=1,length=162), 
@@ -99,4 +99,4 @@ function genRandField(smoothness::T; nu::Float64=2.0,
             )
     end
     return grf
-end
+end =#

@@ -30,6 +30,9 @@ mutable struct MJO_params
     delt_x    :: Float64 # 1/delt_x (to eliminate divisions)
     delt_y    :: Float64 # 1/delt_y (to eliminate divisions)
 
+    grid_x    :: Int16 # = length(params.lon)
+    grid_y    :: Int16 # = length(params.lat);
+
     Ro        :: Float64 # \frac{1}{Ro*y} = 4*pi*L^2/(U*day in seconds * RE)
     Fr        :: Float64 # 1/Fr^2 = gH/U^2
     BQH       :: Float64 # \frac{\hat{Q}}{H}
@@ -52,6 +55,7 @@ mutable struct MJO_params
         lat_range[1]-deg/2: deg: lat_range[2]+deg/2, lon_range[1]: deg: lon_range[2]-deg,
         pi*copy(RE)*(lat_range[1]-deg/2: deg: lat_range[2]+deg/2)/(180.0*copy(LL)),
         180.0*copy(LL)/(copy(deg)*pi*copy(RE)), 180.0*copy(LL)/(copy(deg)*pi*copy(RE)),
+        Int((lon_range[2]-lon_range[1])/deg), Int((lat_range[2]-lat_range[1])/deg + 2),
         4.0*pi*LL^2/(3600.0*24.0*UU*RE), g*HH/UU^2, BB*QQ/HH, LL/(UU*T_RC), 
         copy(PP), 0.042 
         )
@@ -276,8 +280,8 @@ function gen_params(h_time::Float64)
                     .058,              # Qs
                     11.4,              # B
                     0.25,              # degree
-                    [-20.0, 20.0],     # lat_range
-                    [0.0, 360.0],      # lon_range
+                    [-30.0, 30.0],     #[-20.0, 20.0],     # lat_range
+                    [0.0, 90.0],      #[0.0, 360.0] lon_range
                     17500.0,           # PP
                     h_time             # time-step length
                     )
@@ -297,9 +301,9 @@ end
 
 include("smooth_data.jl")
 
-function genInitSr(stencil::Array{T,2}=zeros(0,0); scheme::String="ex") where T<:Real
-    grid_y=162;
-    grid_x=1440;
+function genInitSr(params::MJO_params, stencil::Array{T,2}=zeros(0,0); scheme::String="ex") where T<:Real
+    grid_y = params.grid_y;
+    grid_x = params.grid_x;
     if scheme =="ex"
         if stencil==zeros(0,0) # q is random field
             return MJO_State(

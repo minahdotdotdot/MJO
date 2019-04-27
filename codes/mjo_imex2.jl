@@ -5,16 +5,14 @@
 include("mjo_a.jl")
 global h_time = 0.0009 # = 3min
 params=gen_params(h_time);
-global grid_y = length(params.lat);
-global grid_x = length(params.lon);
 ###############################################################################
 # DCT/DST & FFT and their inverses
 using FFTW
 #   - state: physical dim
 #   - statehat: Coeffs in Cos/Sin/Fourier Domain
 
-function dcsft(state::MJO_State, statehat::MJO_State_im,
-    fields=fieldnames(MJO_State)[1:6], grid_x::Int=1440)
+function dcsft(state::MJO_State, statehat::MJO_State_im, grid_x::Int16,
+    fields=fieldnames(MJO_State)[1:6])
     for qq in fields
         if qq in fields[[1,3,5,6]]   # m1, m2, h1, h2 
             # DCT then RFFT
@@ -35,8 +33,8 @@ function dcsft(state::MJO_State, statehat::MJO_State_im,
     return statehat
 end
 
-function idcsft(state::MJO_State, statehat::MJO_State_im,
-    fields=fieldnames(MJO_State)[1:6], grid_x::Int=1440)
+function idcsft(state::MJO_State, statehat::MJO_State_im, grid_x::Int16,
+    fields=fieldnames(MJO_State)[1:6])
     for qq in fields
         if qq in fields[[1,3,5,6]]   # m1, m2, h1, h2 
             # iRFFT then iDCT
@@ -201,17 +199,18 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
     end
 
     # Ghost cells
-
+    grid_y = params.grid_y
+    grid_x = params.grid_x
     # Iterate over longitudinal direction.
-    for ii = 1 : length(params.lon)
+    for ii = 1 : grid_x
         # Account for zonal periodicity
         iii = ii  # left index: use for ii-1  
         iiii = ii # right index: use for ii+1  
 
         #Boundary conditions in lon: lon[1] = 0 = 360, lon[end] = long[1440] = 359.75
         if ii == 1
-            iii = 1441 # to satisfy iii-1 = 1440
-        elseif ii == 1440
+            iii = grid_x+1 # to satisfy iii-1 = 1440
+        elseif ii == grid_x
             iiii = 0   # to satisfy iiii+1 = 1
         end
 
@@ -219,7 +218,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
         set_ghost_cells(state, ii)
 
         # Iterate over latitudinal direction.
-        for jj = 2:length(params.y)-1
+        for jj = 2:grid_y-1
             value_P_RC = P_RC(LL, UU, QQ, B, Qs, state.q[jj,ii], T_Q, BQH, Tratio, state.h2[jj,ii], state.h1[jj,ii],PP)
 
             ### MOMENTUM
@@ -304,7 +303,7 @@ end
     return kx, ky, ak, b, d, f, g
 end
 
-@inline function genRandfield(;grid_y::Int64=162, grid_x::Int64=1440)
+@inline function genRandfield(;grid_y::T, grid_x::T) where T<:Real
     R = randn(grid_y+4, grid_x); 
     R = 2*R[2:end-1,:] + R[1:end-2,:] + R[3:end,:]
     return 1/6*
@@ -327,7 +326,3 @@ rand(162,1440), rand(162,1440),
 rand(162,1440));
 IChat = genInitSr(scheme="im")
 =#
-
-
-
-
