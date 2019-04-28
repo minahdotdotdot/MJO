@@ -5,6 +5,7 @@
 include("mjo_a.jl")
 global h_time = 0.0009 # = 3min
 params=gen_params(h_time);
+global grid_y = params.grid_y
 ###############################################################################
 # DCT/DST & FFT and their inverses
 using FFTW
@@ -283,11 +284,11 @@ function feEXNL(params::MJO_params, state::MJO_State, tend::MJO_State, h_time::F
 end
 
 @inline function imex_init(params::MJO_params, h_time::Float64, bb::Float64; H1::Float64=1.0)
-    grid_x2 = Int(grid_x/2+1);
+    grid_x2 = Int(params.grid_x/2+1);
     kx = ((params.LL/params.RE )* 
-    repeat(range(0, stop=grid_x2-1)', grid_y-1,1));
+    repeat(range(0, stop=grid_x2-1)', params.grid_y-1,1));
     ky = ((9/2 * params.LL/params.RE)*
-    repeat(range(0, stop=grid_y-2), 1,grid_x2));
+    repeat(range(0, stop=params.grid_y-2), 1,grid_x2));
 
     aa = H1 * (h_time^2 * params.Fr)*(kx.^2 + ky.^2);
     c = 1 .+ bb * (kx.^2 + ky.^2)

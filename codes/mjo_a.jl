@@ -301,12 +301,11 @@ end
 
 include("smooth_data.jl")
 
-function genInitSr(params::MJO_params, stencil::Array{T,2}=zeros(0,0); scheme::String="ex") where T<:Real
+function genInitSr(params::MJO_params; scheme::String="ex") where T<:Real
     grid_y = params.grid_y;
     grid_x = params.grid_x;
     if scheme =="ex"
-        if stencil==zeros(0,0) # q is random field
-            return MJO_State(
+        return MJO_State(
                 zeros(grid_y, grid_x),        #m1
                 zeros(grid_y, grid_x),        #n1
                 zeros(grid_y, grid_x),        #m2
@@ -315,21 +314,8 @@ function genInitSr(params::MJO_params, stencil::Array{T,2}=zeros(0,0); scheme::S
                 ones(grid_y, grid_x),         #h2
                 rand(grid_y, grid_x)          #q
                 )
-        else              # q is random field smoothed
-            return MJO_State(
-                zeros(grid_y, grid_x),        #m1
-                zeros(grid_y, grid_x),        #n1
-                zeros(grid_y, grid_x),        #m2
-                zeros(grid_y, grid_x),        #m2
-                ones(grid_y, grid_x),         #h1
-                ones(grid_y, grid_x),         #h2
-                smoother(rand(grid_y,grid_x), stencil) #q
-                )
-       
-        end
     elseif scheme == "imex"
-        if stencil==zeros(0,0) # q is random field
-            return MJO_State(
+        return MJO_State(
                 zeros(grid_y, grid_x),        #m1
                 zeros(grid_y, grid_x),        #n1
                 zeros(grid_y, grid_x),        #m2
@@ -338,17 +324,6 @@ function genInitSr(params::MJO_params, stencil::Array{T,2}=zeros(0,0); scheme::S
                 zeros(grid_y, grid_x),        #eta2
                 1.05 .+ 0.2*rand(grid_y, grid_x)          #q
                 )
-        else              # q is random field smoothed
-            return MJO_State(
-                zeros(grid_y, grid_x),        #m1
-                zeros(grid_y, grid_x),        #n1
-                zeros(grid_y, grid_x),        #m2
-                zeros(grid_y, grid_x),        #m2
-                zeros(grid_y, grid_x),        #eta1
-                zeros(grid_y, grid_x),        #eta2
-                smoother(rand(grid_y,grid_x), stencil) #q
-                )
-        end
     elseif scheme =="im"
         grid_x2 = Int(grid_x/2+1)
             return MJO_State_im(
