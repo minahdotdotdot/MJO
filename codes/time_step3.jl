@@ -270,12 +270,12 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step],
     H1::Float64=1.0, NA::Float64=1.5,
     hov::Bool=false)
-    if hov==true
+    #=if hov==true
         hovmoller(N, every, h_time, name, 
     bb=bb, multistep=multistep, step=step, exscheme=exscheme,
     X=X, x=x, loc=loc, msfunc=msfunc, H1=H1, NA=NA)
         return "hovmoller printed!"
-    end
+    end=#
     params = gen_params(h_time);
     ch_params!(params, X, x); #Change params field X into value x. 
     ch_params!(params, :AA, AAval(H1=H1)) #Change alpha param to match H1.
@@ -289,6 +289,9 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time, H1=H1);
     pad=ceil(Int,log10(N/every));
     saveimshow(state, name*string(1, pad=pad),loc=loc, params=params)
+    if hov==true
+       newtxt!(state; name=name, loc=loc)
+    end
     if multistep==true
         tendlist = Array{MJO_State,1}(undef, step);
         tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time, H1=H1);
@@ -314,6 +317,8 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
             elseif minimum(state.h1) <= -1*H1
                 @printf("H1 is too small.")
                 return 0
+            elseif hov==true
+                addtxt!(state;name=name, loc=loc)
             end
             saveimshow(state, name*string(1+div(i,every), pad=pad), loc=loc, params=params, H1=H1)
         end
@@ -331,6 +336,7 @@ using DelimitedFiles
 end
 
 @inline function addtxt!(state::MJO_State; name::String, loc::String="../movies/")
+    m =Int(size(state.q)[1]/2);
     for f in fieldnames(MJO_State)
         open(loc*string(f)*"/"*name*".txt", "a") do io
             writedlm(io, getproperty(state, f)[m,:]')
@@ -338,6 +344,29 @@ end
     end
 end
 
+function hovmollertxt(loc::String, txtname::String, imagename::String; T=240)
+    for f in fieldnames(MJO_State)
+        cm = "PuOr";
+        if f == :q
+            cm = "BuGn";
+        end
+        fig, ax=subplots();
+        getproperty(ax, :set_aspect)("equal");
+        fig.colorbar(
+            ax.imshow(
+                readdlm(loc*string(f)*"/"*txtname*".txt"),
+                cmap=cm,
+                extent=(params.lon_range[1], params.lon_range[2], T, 0)
+            ),
+            orientation="horizontal");
+    savefig(
+            loc*string(f)*"/"*imagename*".png",
+            pad_inches=.10,
+            bbox_inches="tight"
+        );
+    close(fig)
+    end
+end
 
 function hovmoller(N::Int, every::Int, h_time::Float64, name::String; 
     bb::Float64=0.005, multistep::Bool=true, step::Int=3, exscheme::Function=ab1_step,
@@ -401,28 +430,6 @@ function hovmoller(N::Int, every::Int, h_time::Float64, name::String;
             pad_inches=.10, 
             bbox_inches="tight"
         );
+    close(fig)
     end
-end
-
-function hovmoller(evol::Array{MJO_State,1}, f::Symbol; loc::String="../movies/")
-    equator = Int(grid_y/2)
-    toprint = Array{Float64,2}(undef,length(evol),grid_x);
-    for i = 1 : length(evol)
-        toprint[i,:] = .5*(
-            getproperty(evol[i], f)[equator:equator, :] + 
-            getproperty(evol[i], f)[equator+1:equator+1, :]
-            )
-    end
-    cm = "PuOr";
-    if f == :q
-        cm = "BuGn";
-    end
-    fig, ax = subplots();
-    getproperty(ax, :set_aspect)("equal");
-    fig.colorbar(ax.imshow(toprint, cmap=cm), orientation="horizontal");
-    savefig(
-            loc*"/hovmoller",
-            pad_inches=.10, 
-            bbox_inches="tight"
-        );
 end
