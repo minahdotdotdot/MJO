@@ -19,7 +19,7 @@ end
 ##################################
 ## Single-step Explicit Schemes ##
 ##################################
-# Adams-Bashford 1 IS forward euler.
+# Adams-Bashforth 1 IS forward euler.
 @inline function ab1_step(state::MJO_State, 
     update::MJO_State, 
     tendlist::Array{MJO_State,1}, 
@@ -207,7 +207,7 @@ end
 #=exscheme can be: 
 forward-euler (ab1_step), 
 explicit RK4 (RK4_step), and 
-Adams-Bashford with n steps (abn_step) =#
+Adams-Bashforth with n steps (abn_step) =#
 
 function imex(N::Int, every::Int, h_time::Float64; 
     bb::Float64=0.001, multistep::Bool=true, step::Int=1, exscheme::Function=ab1_step,
