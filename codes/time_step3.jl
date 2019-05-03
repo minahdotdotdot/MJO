@@ -133,7 +133,7 @@ end
     outhat::MJO_State_im,
     params::MJO_params, h_time::Float64,
     kx::Array{Complex{Float64},2}, ky::Array{Float64,2}, 
-    a::Array{Float64,2}, b::Array{Float64,2}, d::Array{Float64,2},
+    a::Array{Float64,2}, b::Array{Float64,2}, c::Array{Float64,2}, d::Array{Float64,2},
     f::Array{Float64,2}, g::Array{Float64,2};
     H1::Float64=1.0)
     # Into Fourier/Cos/Sin Space
@@ -143,22 +143,22 @@ end
     # Applying Lower^{-1}
     #outhat.m1[:,:] = a .* RHShat.m1;
     #outhat.n1[:,:] = a .* RHShat.n1;
-    outhat.h1[:,:] = b .*(RHShat.h1 - (1/(params.Fr*H1)) * a .*(
-        kx .*outhat.m1 + ky.*outhat.n1)); # b is actually 1/b
-    outhat.m2[:,:] = a .* (RHShat.m2 - kx .* outhat.h1);
-    outhat.n2[:,:] = a .* (RHShat.n2 + ky .* outhat.h1);
+    outhat.h1[:,:] = b .*(RHShat.h1 - (1/params.Fr)* a.* (
+        kx .* RHShat.m1 + ky .* RHShat.n1)); # b is actually 1/b
+    outhat.m2[:,:] = c .* (RHShat.m2 - (2-H1)*kx .* outhat.h1); #c is actually 1/c
+    outhat.n2[:,:] = c .* (RHShat.n2 + (2-H1)*ky .* outhat.h1);
     outhat.h2[:,:] = (
-        d .* (RHShat.h2 - 
-        (1/(params.Fr*H1))* (kx .* outhat.m2 + ky .* outhat.n2))
-        ); # d is actually a/d
+        d .* (RHShat.h2 - (1/params.Fr)*
+            (kx .* outhat.m2 + ky .* outhat.n2))
+        ); # d is actually 1/d
 
     # Backward Substitution.
     # outhat.h2[:,:] = d .*outhat.h2;
-    outhat.n2[:,:] = outhat.n2 .+ ky .* f.* outhat.h2;
-    outhat.m2[:,:] = outhat.m2 -  kx .* f.* outhat.h2;
+    outhat.n2[:,:] = outhat.n2 + (2-H1)*ky .* f.* outhat.h2;
+    outhat.m2[:,:] = outhat.m2 - (2-H1)*kx .* f.* outhat.h2;
     outhat.h1[:,:] = outhat.h1 - g .* outhat.h2;
-    outhat.n1[:,:] = a .*(RHShat.n1 + ky.*(outhat.h1 + outhat.h2));
-    outhat.m1[:,:] = a .*(RHShat.m1 - kx.*(outhat.h1 + outhat.h2));
+    outhat.n1[:,:] = a .*(RHShat.n1 + H1*ky .* (outhat.h1 + outhat.h2));
+    outhat.m1[:,:] = a .*(RHShat.m1 - H1*kx .* (outhat.h1 + outhat.h2));
 
     # Into Physical Space
     idcsft(exstate, outhat, params.grid_x)
@@ -213,7 +213,7 @@ function imex(N::Int, every::Int, h_time::Float64;
     bb::Float64=0.001, multistep::Bool=true, step::Int=1, exscheme::Function=ab1_step,
     X=:g, x=9.80665,
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step], 
-    H1::Float64=1.0, NA::Float64=1.5)
+    H1::Float64=1.0, NA::Float64=1.5, fr::Float64=0.5)
     params = gen_params(h_time);
     ch_params!(params, X, x); #Change params field X into value x. 
     ch_params!(params, :AA, AAval(H1=H1)) #Change alpha param to match H1.
@@ -222,7 +222,7 @@ function imex(N::Int, every::Int, h_time::Float64;
     state  = deepcopy(IC);     exstate = deepcopy(IC);
     RHShat = deepcopy(IChat);  outhat  = deepcopy(IChat);
     bb     = bb*h_time; #input bb should be the actual diffusion constant: K = bb/h_time.
-    kx, ky, a, b, d, f, g = imex_init(params, h_time, bb);
+    kx, ky, a, b, d, f, g = imex_init(params, h_time, bb, H1=H1, fr=fr);
     tendlist = Array{MJO_State,1}(undef, 1); start = 2
     evol     = Array{MJO_State,1}(undef, div(N, every)+1);
     evol[1] = IC; tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time, H1=H1);
@@ -268,8 +268,8 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     X=:g, x=9.80665,
     loc::String="../movies/",
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step],
-    H1::Float64=1.0, NA::Float64=1.5,
-    hov::Bool=false)
+    H1::Float64=1.0, NA::Float64=1.5, fr::Float64=0.5,
+    hov::Bool=false, everyH::Int)
     #=if hov==true
         hovmoller(N, every, h_time, name, 
     bb=bb, multistep=multistep, step=step, exscheme=exscheme,
@@ -284,7 +284,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
     state  = deepcopy(IC);     exstate = deepcopy(IC);
     RHShat = deepcopy(IChat);  outhat  = deepcopy(IChat);
     bb     = bb*h_time; #input bb should be the actual diffusion constant: K = bb/h_time.
-    kx, ky, a, b, d, f, g = imex_init(params, h_time, bb, H1=H1);
+    kx, ky, a, b, c, d, f, g = imex_init(params, h_time, bb, H1=H1, fr=fr);
     tendlist = Array{MJO_State,1}(undef, 1); start = 2;
     tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time, H1=H1);
     pad=ceil(Int,log10(N/every));
@@ -299,7 +299,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
             exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true, H1=H1);
             #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
             exstate.q[:,:] = exstate.q + sqrt(h_time)*NA*tanh.(3.0*exstate.q).*genRandfield(grid_y=params.grid_y, grid_x=params.grid_x) #7.45
-            state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g, H1=H1)
+            state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, c, d, f, g, H1=H1)
             state.q[state.q .< 0.] .= 0.
         end
         start = step+1
@@ -308,7 +308,7 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
         exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time, H1=H1)
         exstate.q[:,:] = exstate.q + sqrt(h_time)*NA*tanh.(3.0*exstate.q).*genRandfield(grid_y=params.grid_y, grid_x=params.grid_x) 
         #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
-        state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g, H1=H1)
+        state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, c, d, f, g, H1=H1)
         state.q[state.q .< 0.] .= 0.
         if rem(i, every) ==1
             if istherenan(state)==true || isthereinf(state)==true
@@ -318,7 +318,9 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
                 @printf("H1 is too small.")
                 return 0
             elseif hov==true
-                addtxt!(state;name=name, loc=loc)
+                if rem(i, everyH)==1
+                    addtxt!(state;name=name, loc=loc)
+                end
             end
             saveimshow(state, name*string(1+div(i,every), pad=pad), loc=loc, params=params, H1=H1)
         end
@@ -344,23 +346,29 @@ end
     end
 end
 
-function hovmollertxt(loc::String, txtname::String, imagename::String; T=240)
+function hovmollertxt(txtname::String, imagename::String; loc::String="../movies/", T=240)
+    loc0 = deepcopy(loc)
     for f in fieldnames(MJO_State)
         cm = "PuOr";
         if f == :q
-            cm = "BuGn";
+            cm = "gist_ncar"#"BuGn";
+        end
+        if loc0 != "../movies/"
+            loc = loc0*string(f)*"_"
+        else
+            loc = loc0*string(f)*"/"
         end
         fig, ax=subplots();
         getproperty(ax, :set_aspect)("equal");
         fig.colorbar(
             ax.imshow(
-                readdlm(loc*string(f)*"/"*txtname*".txt"),
+                readdlm(loc*txtname*".txt"),
                 cmap=cm,
                 extent=(params.lon_range[1], params.lon_range[2], T, 0)
             ),
             orientation="horizontal");
     savefig(
-            loc*string(f)*"/"*imagename*".png",
+            loc*imagename*".png",
             pad_inches=.10,
             bbox_inches="tight"
         );

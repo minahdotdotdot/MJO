@@ -95,7 +95,7 @@ end
         elseif f ==:m2 || f ==:n2
             evolfield = getproperty(state,f)[2:end-1, :]./(H2 .+getproperty(state,:h2)[2:end-1, :]);
         elseif f==:q
-            cm = "BuGn"
+            cm = "gist_ncar"#"BuGn"
             evolfield = P(params.LL, params.UU, params.QQ, params.B, params.Qs, getproperty(state,f)[2:end-1, :],
                 params.T_Q, params.PP);
         else
@@ -112,7 +112,7 @@ end
         #    ax[:imshow](
                 evolfield,
                 cmap=cm,
-                extent=(params.lon_range[1], params.lon_range[2], params.lat_range[1], params.lat_range[2], )#(0, 360, -20, 20)
+                extent=(params.lon_range[1], params.lon_range[2], params.lat_range[1], params.lat_range[2])#(0, 360, -20, 20)
             )
         );
         savefig(

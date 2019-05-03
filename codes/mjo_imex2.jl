@@ -224,7 +224,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
 
             ### MOMENTUM
 
-            out.m1[jj,ii] = ( -2.5*state.m1[jj,ii]
+            out.m1[jj,ii] = (
                 - div_flux(state.m1, state.n1, state.h1, state.m1, ii, iii, iiii, jj, delt_x, delt_y, H=H1)
                 + params.Ro*params.y[jj]*state.n1[jj,ii]                             #=+1/Ro*n1=#
                 - params.Fr*(
@@ -233,7 +233,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
                 - state.m1[jj,ii]/(H1+state.h1[jj,ii])*value_P_RC
                 )
 
-            out.n1[jj,ii] = ( -2.5*state.n1[jj,ii]
+            out.n1[jj,ii] = (
                 - div_flux(state.m1, state.n1, state.h1, state.n1, ii, iii, iiii, jj, delt_x, delt_y, H=H1)
                 - params.Ro*params.y[jj]*state.m1[jj,ii]                             #=-1/Ro*m1=#
                 - params.Fr*(
@@ -283,25 +283,25 @@ function feEXNL(params::MJO_params, state::MJO_State, tend::MJO_State, h_time::F
     return state + h_time*tend
 end
 
-@inline function imex_init(params::MJO_params, h_time::Float64, bb::Float64; H1::Float64=1.0)
+@inline function imex_init(params::MJO_params, h_time::Float64, bb::Float64; H1::Float64=1.0, fr::Float64=0.5)
     grid_x2 = Int(params.grid_x/2+1);
     kx = ((params.LL/params.RE )* 
     repeat(range(0, stop=grid_x2-1)', params.grid_y-1,1));
     ky = ((9/2 * params.LL/params.RE)*
     repeat(range(0, stop=params.grid_y-2), 1,grid_x2));
 
-    aa = H1 * (h_time^2 * params.Fr)*(kx.^2 + ky.^2);
+    aa = (h_time^2 * params.Fr)*(kx.^2 + ky.^2);
     c = 1 .+ bb * (kx.^2 + ky.^2)
-    ak = 1 ./ c; c = c.^2;
-    b = 1 ./  (ak .*(aa + c)); # actually 1./b
-    g = aa ./(aa + c)
-    d = ak ./(1 .+ (-1 + params.AA)* ak.^2 .* aa .+ g) # actually ak ./d
-    #f = (ak .*((-1 + params.AA)*aa .+ params.AA*c))./ (aa .+ c)
-    f = ak .* (params.AA .- g)
+    ak = 1 ./ (c .+ (h_time * fr));
+    b = 1 ./  (ak .*aa .+ c); # actually 1/b
+    g = aa .*ak .* b;
+    f = (params.AA .- g) ./ c;
+    d = c .+ (2-H1)*aa .* f; d = 1 ./ d #acdtually 1/d
+    c = 1 ./c #actually 1/c
 
-    kx = H1 * (im*h_time*params.Fr) * kx;
-    ky = H1 * (h_time*params.Fr) * ky
-    return kx, ky, ak, b, d, f, g
+    kx = (im*h_time*params.Fr) * kx;
+    ky = (h_time*params.Fr) * ky
+    return kx, ky, ak, b, c, d, f, g
 end
 
 @inline function genRandfield(;grid_y::T, grid_x::T) where T<:Real
