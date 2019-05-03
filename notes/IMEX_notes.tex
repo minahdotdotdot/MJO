@@ -31,17 +31,18 @@ We modify the original set of governing equations by setting $h_i=H_i+\eta_i$, a
 We had used $H_1=H_2=1$, but now will consider a much thicker lower layer and a thinner higher layer such that $\frac{H_2}{H_1}<<1$, and $H_1+H_2=2$ to keep the same nondimensional constant as before. 
 The goal of this adjustment is to get similar results as the single-layer models.
 We will be treating linear terms implicitly, and non-linear terms explicitly. 
+We have also added a friction term $fr$ to the lower layer momenta. 
 \subsubsection*{Momentum}
 \begin{align*}
 \pd{t}\vec{m_1} =& - \frac{1}{Ro}\left(\hat{k}\times \vec{m_1}\right)
--\frac{1}{Fr^2}\nabla\left(\eta_1+\eta_2\right)+ \kappa \nabla ^2 \vec{m_1}\quad\text{(Linear)}\\
+-\frac{H_1}{Fr^2}\nabla\left(\eta_1+\eta_2\right)+ \kappa \nabla ^2 \vec{m_1}-fr \vec{m1}\quad\text{(Linear)}\\
 &- \nabla \cdot \left(\frac{1}{H_1+\eta_1}\vec{m_1}\vec{m_1}\right) -\frac{1}{Fr^2} \eta_1\nabla\left(\eta_1 + \eta_2\right) -\frac{\vec{m_1}}{H_1+\eta_1} \left( \beta \frac{\hat{Q}}{H}\hat{P}(Q) - \frac{T}{T_{RC}}(\eta_2-\eta_1)\HH{(\eta_2-\eta_1)}\right) \quad\text{(Nonlinear)}
 \end{align*}
 
 \begin{align*}
 \pd{t}\vec{m_2} =& - \frac{1}{Ro}\left(\hat{k}\times \vec{m_2}\right)
--\frac{1}{Fr^2}\nabla\left(\eta_1+\alpha \eta_2\right)+ \kappa \nabla ^2 \vec{m_2}\quad\text{(Linear)}\\
-&- \nabla \cdot \left(\frac{1}{H_2+\eta_2}\vec{m_2}\vec{m_2}\right) -\frac{1}{Fr^2} \eta_1\nabla\left(\eta_1 + \alpha\eta_2\right) +\frac{\vec{m_1}}{H_1+\eta_1} \left( \beta \frac{\hat{Q}}{H}\hat{P}(Q) - \frac{T}{T_{RC}}(\eta_2-\eta_1)\HH{(\eta_2-\eta_1)}\right) \quad\text{(Nonlinear)}
+-\frac{H_2}{Fr^2}\nabla\left(\eta_1+\alpha \eta_2\right)+ \kappa \nabla ^2 \vec{m_2}\quad\text{(Linear)}\\
+&- \nabla \cdot \left(\frac{1}{H_2+\eta_2}\vec{m_2}\vec{m_2}\right) -\frac{1}{Fr^2} \eta_2\nabla\left(\eta_1 + \alpha\eta_2\right) +\frac{\vec{m_1}}{H_1+\eta_1} \left( \beta \frac{\hat{Q}}{H}\hat{P}(Q) - \frac{T}{T_{RC}}(\eta_2-\eta_1)\HH{(\eta_2-\eta_1)}\right) \quad\text{(Nonlinear)}
 \end{align*}
 
 
@@ -79,13 +80,14 @@ We collect the linear terms and try to simplify the matrix linear operator.
 %For now, we exclude the diffusion terms that were previously used to improve numerical stability, which eliminates linear terms in the $q$ equation.
 Let $\frac{\beta}{h}$ be the diffusion constant, where $h$ is the time step size. 
 
-\[\pd{t}\vec{x} = L\vec{x}=
+\[ \pd{t}x = L\vec{x}\]
+\[=
 \left[\begin{array}{ccc|ccc}
-\frac{\beta}{h}(\pd{xx}+\pd{yy}) & \frac{1}{Ro}y & -\frac{1}{Fr^2}\pd{x} &  & 0 & -\frac{1}{Fr^2}\pd{x} \\
--\frac{1}{Ro}y & \frac{\beta}{h}(\pd{xx}+\pd{yy})  & -\frac{1}{Fr^2}\pd{y} & 0 & 0 & -\frac{1}{Fr^2}\pd{y}\\
+\frac{\beta}{h}(\pd{xx}+\pd{yy})-fr & \frac{1}{Ro}y & -\frac{1}{Fr^2}H_1\pd{x} & 0 & 0 & -\frac{1}{Fr^2} H_1\pd{x} \\
+-\frac{1}{Ro}y & \frac{\beta}{h}(\pd{xx}+\pd{yy})-fr  & -\frac{1}{Fr^2}H_1\pd{y} & 0 & 0 & -\frac{1}{Fr^2}H_1\pd{y}\\
 -\pd{x} & -\pd{y} & \frac{\beta}{h}(\pd{xx}+\pd{yy})  & 0 & 0 & 0 \\ \hline
-0 & 0 & -\frac{1}{Fr}\pd{x} & \frac{\beta}{h}(\pd{xx}+\pd{yy})  & \frac{1}{Ro}y &  -\frac{\alpha}{Fr^2}\pd{x} \\
-0 & 0 & -\frac{1}{Fr}\pd{y} & -\frac{1}{Ro}y  & \frac{\beta}{h}(\pd{xx}+\pd{yy}) &  -\frac{\alpha}{Fr^2}\pd{y} \\
+0 & 0 & -\frac{1}{Fr}(2-H_1)\pd{x} & \frac{\beta}{h}(\pd{xx}+\pd{yy})  & \frac{1}{Ro}y &  -\frac{\alpha}{Fr^2}(2-H_1)\pd{x} \\
+0 & 0 & -\frac{1}{Fr}(2-H_1)\pd{y} & -\frac{1}{Ro}y  & \frac{\beta}{h}(\pd{xx}+\pd{yy}) &  -\frac{\alpha}{Fr^2}(2-H_1)\pd{y} \\
 0 & 0 & 0 & -\pd{x} & -\pd{y} & \frac{\beta}{h}(\pd{xx}+\pd{yy}) 
 \end{array}\right] \begin{bmatrix}
 m_1\\
@@ -94,14 +96,15 @@ n_1\\
 m_2\\
 n_2\\
 \eta_2
-\end{bmatrix} = \begin{bmatrix}
-\pd{t}m_1\\
-\pd{t}n_1\\
-\pd{t}\eta_1\\
-\pd{t}m_2\\
-\pd{t}n_2\\
-\pd{t}\eta_2
 \end{bmatrix}
+% = \begin{bmatrix}
+%\pd{t}m_1\\
+%\pd{t}n_1\\
+%\pd{t}\eta_1\\
+%\pd{t}m_2\\
+%\pd{t}n_2\\
+%\pd{t}\eta_2
+%\end{bmatrix}
 \]
 
 
@@ -176,13 +179,14 @@ n_2\\
 \end{itemize}
 For each $k_x$ and $k_y$ pair, we get the following system.
 \[\pd{t}\vec{x} = \hat{L}_{k_x,k_y}\vec{x} 
-\]\\\[=
+\]
+\[=
 \left[\begin{array}{ccc|ccc}
--\frac{\beta}{h}(k_x^2+k_y^2) & 0 & -\frac{1}{Fr^2}k_xi & 0 & 0 & -\frac{1}{Fr^2}k_xi \\
-0 & -\frac{\beta}{h}(k_x^2+k_y^2) & \frac{1}{Fr^2}k_y & 0 & 0 & \frac{1}{Fr^2}k_y\\
+-\frac{\beta}{h}(k_x^2+k_y^2)-fr & 0 & -\frac{H_1}{Fr^2}k_xi & 0 & 0 & -\frac{H_1}{Fr^2}k_xi \\
+0 & -\frac{\beta}{h}(k_x^2+k_y^2)-fr & \frac{H_1}{Fr^2}k_y & 0 & 0 & \frac{H_1}{Fr^2}k_y\\
 -k_xi & -k_y & -\frac{\beta}{h}(k_x^2+k_y^2) & 0 & 0 & 0 \\ \hline
-0 & 0 & -\frac{1}{Fr^2}k_xi & -\frac{\beta}{h}(k_x^2+k_y^2) & 0 &  -\frac{\alpha}{Fr^2}k_xi \\
-0 & 0 & \frac{1}{Fr^2}k_y & 0  & -\frac{\beta}{h}(k_x^2+k_y^2) &  \frac{\alpha}{Fr^2}k_y \\
+0 & 0 & -\frac{2-H_1}{Fr^2}k_xi & -\frac{\beta}{h}(k_x^2+k_y^2) & 0 &  -\frac{\alpha(2-H_1)}{Fr^2}k_xi \\
+0 & 0 & \frac{2-H_1}{Fr^2}k_y & 0  & -\frac{\beta}{h}(k_x^2+k_y^2) &  \frac{\alpha(2-H_1)}{Fr^2}k_y \\
 0 & 0 & 0 & -k_xi & -k_y & -\frac{\beta}{h}(k_x^2+k_y^2)
 \end{array}\right] \begin{bmatrix}
 \hat{m}_{1,k_x,k_y}\\
@@ -191,14 +195,15 @@ For each $k_x$ and $k_y$ pair, we get the following system.
 \hat{m}_{2,k_x,k_y}\\
 \hat{n}_{2,k_x,k_y}\\
 \hat{\eta}_{2,k_x,k_y}
-\end{bmatrix} = \begin{bmatrix}
-\pd{t}\hat{m}_{1,k_x,k_y}\\
-\pd{t}\hat{n}_{1,k_x,k_y}\\
-\pd{t}\hat{\eta}_{1,k_x,k_y}\\
-\pd{t}\hat{m}_{2,k_x,k_y}\\
-\pd{t}\hat{n}_{2,k_x,k_y}\\
-\pd{t}\hat{\eta}_{2,k_x,k_y}
-\end{bmatrix}
+\end{bmatrix} 
+%= \begin{bmatrix}
+%\pd{t}\hat{m}_{1,k_x,k_y}\\
+%\pd{t}\hat{n}_{1,k_x,k_y}\\
+%\pd{t}\hat{\eta}_{1,k_x,k_y}\\
+%\pd{t}\hat{m}_{2,k_x,k_y}\\
+%\pd{t}\hat{n}_{2,k_x,k_y}\\
+%\pd{t}\hat{\eta}_{2,k_x,k_y}
+%\end{bmatrix}
 \]
 
 Define an operator $\hat{L}$ such that it is a block diagonal matrix with all $(k_x, k_y)$ pairs of $\hat{L}_{k_x,k_y}$'s.
@@ -237,11 +242,11 @@ $$
 We manually compute the LU decomposition of $A_{k_x, k_y}$ by using Gaussian elimination. 
 \[A_{k_x, k_y} = I -  h \hat{L}_{k_x, k_y}\]\\
 \[= \begin{bmatrix}
-1+\beta(k_x^2+k_y^2) & 0 & h\frac{1}{Fr^2}k_xi & 0 & 0 & h\frac{1}{Fr^2}k_xi \\
-0 & 1+\beta(k_x^2+k_y^2)  & -h\frac{1}{Fr^2}k_y & 0 & 0 & -h\frac{1}{Fr^2}k_y\\
+1+\beta(k_x^2+k_y^2)+h fr & 0 & h\frac{H_1}{Fr^2}k_xi & 0 & 0 & h\frac{H_1}{Fr^2}k_xi \\
+0 & 1+\beta(k_x^2+k_y^2)+h fr  & -h\frac{H_1}{Fr^2}k_y & 0 & 0 & -h\frac{H_1}{Fr^2}k_y\\
 hk_xi & hk_y & 1+\beta(k_x^2+k_y^2)  & 0 & 0 & 0 \\ 
-0 & 0 & h\frac{1}{Fr^2}k_xi & 1+\beta(k_x^2+k_y^2)  & 0 &  h\frac{\alpha}{Fr^2}k_xi \\
-0 & 0 & -h\frac{1}{Fr^2}k_y & 0  & 1+\beta(k_x^2+k_y^2)  &  -h\frac{\alpha}{Fr^2}k_y \\
+0 & 0 & h\frac{2-H_1}{Fr^2}k_xi & 1+\beta(k_x^2+k_y^2)  & 0 &  h\frac{\alpha(2-H_1)}{Fr^2}k_xi \\
+0 & 0 & -h\frac{2-H_1}{Fr^2}k_y & 0  & 1+\beta(k_x^2+k_y^2)  &  -h\frac{\alpha(2-H_1)}{Fr^2}k_y \\
 0 & 0 & 0 & hk_xi & hk_y & 1+\beta(k_x^2+k_y^2) 
 \end{bmatrix}\]
 The following steps transform $A$ into an upper triangular form. It essentially performs $U = L^{-1}A$.
@@ -259,29 +264,29 @@ The following functions are defined to somewhat optimize memory vs. computation.
 
 \begin{align*}
 a_0(\vec{k}) &:=\frac{h^2}{Fr}\|\vec{k}\|_2^2\\
-a(\vec{k} &:= (1+\beta\|\vec{k}\|_2^2)^{-1}\\
-c(\vec{k}) &:= (1+\beta\|\vec{k}\|_2^2)^2 \\
-b(\vec{k}) &:= a(\vec{k})(a_0(\vec{k})+c(\vec{k}))\\
-g(\vec{k}) &:= \frac{a_0(\vec{k})}{a_0(\vec{k})+c(\vec{k})} \\
-d(\vec{k}) &:= 1+(\alpha-1)a(\vec{k})^2a_0(\vec{k})+g(\vec{k})\\
-f(\vec{k}) &:= \frac{a(\vec{k})}{a_0(\vec{k})+c(\vec{k})} \left((\alpha-1)a_0(\vec{k}) + \alpha c(\vec{k})\right)
+a(\vec{k}) &:= (1+\beta\|\vec{k}\|_2^2+h fr)^{-1}\\
+c(\vec{k}) &:= (1+\beta\|\vec{k}\|_2^2) \\
+b(\vec{k}) &:= H_1 a_0(\vec{k})a(\vec{k})+c(\vec{k})\\
+g(\vec{k}) &:= \frac{H_1a_0(\vec{k})a(\vec{k})}{b(\vec{k})} \\
+f(\vec{k}) &:= \frac{\alpha-g(\vec{k})}{c(\vec{k})}\\
+d(\vec{k}) &:= c(\vec{k}) + (2-H_1)a_0(\vec{k})+f(\vec{k})\\
 \end{align*}
 \begin{enumerate}
 	\item $R_1 \gets a(\vec{k}) R_1$
 	\item $R_2 \gets a(\vec{k}) R_2$
 	\item $R_3 \gets \frac{1}{b(\vec{k})}[R_3-h\left(ik_xR_1 +k_yR_2\right)]$
-	\item $R_4 \gets a(\vec{k})[R_4-\frac{ihk_x}{Fr^2}R_3]$
-	\item $R_5 \gets a(\vec{k})[R_5+\frac{hk_y}{Fr^2}R_3]$
-	\item $R_6 \gets a(\vec{k})[R_6-h\left(ik_xR_4 +k_yR_5\right)]$
+	\item $R_4 \gets \frac{1}{c(\vec{k})}[R_4-\frac{ihk_x(2-H_1)}{Fr^2}R_3]$
+	\item $R_5 \gets \frac{1}{c(\vec{k})}[R_5+\frac{hk_y(2-H_1)}{Fr^2}R_3]$
+	\item $R_6 \gets \frac{1}{d(\vec{k})}[R_6-h\left(ik_xR_4 +k_yR_5\right)]$
 \end{enumerate}
 The resulting matrix is: \[U = L^{-1}A = 
 \begin{bmatrix}
-1 & 0 & i \frac{h}{Fr^2}k_xa(\vec{k}) & 0 & 0 & i\frac{h}{Fr^2}k_xa(\vec{k}) \\
+1 & 0 & i \frac{h H_1}{Fr^2}k_xa(\vec{k}) & 0 & 0 & i\frac{h H_1}{Fr^2}k_xa(\vec{k}) \\
 0 & 1 & -\frac{h}{Fr^2}k_ya(\vec{k}) & 0 & 0 & -\frac{h}{Fr^2}k_ya(\vec{k}) \\
 0 & 0 & 1 & 0 & 0 & g(\vec{k}) \\ 
-0 & 0 & 0 & 1 & 0 & i \frac{h}{Fr^2}k_x f(\vec{k}) \\
-0 & 0 & 0 & 0 & 1 & -\frac{h}{Fr^2}k_y f(\vec{k}) \\
-0 & 0 & 0 & 0 & 0 & d(\vec{k})
+0 & 0 & 0 & 1 & 0 & i \frac{h(2-H_1)}{Fr^2}k_x f(\vec{k}) \\
+0 & 0 & 0 & 0 & 1 & -\frac{h(2-H_1)}{Fr^2}k_y f(\vec{k}) \\
+0 & 0 & 0 & 0 & 0 & 1
 \end{bmatrix}\] 
 The total set of operations is given below.
 Recall:
@@ -290,32 +295,32 @@ $A\mbfg{x}=\mbfr{b} = LU\mbfb{y}$
 	\item $\mbfb{y_1}\gets a\mbfr{b_1}$ (No need to store separately.)
 	\item $\mbfb{y_2}\gets a \mbfr{b_2}$ (No need to store separately.)
 	\item $\mbfb{y_3} \gets \frac{1}{b} \left(\mbfr{b_3} -h \left[i k_x \mbfb{y_1} + k_y \mbfb{y_2}\right]\right)$ \\ 
-	$\mbfb{y_3} \gets \frac{a}{b} \left(\mbfr{b_3} -h \left[i k_x \mbfr{b_1} + k_y \mbfr{b_2}\right]\right)$ 
-	\item $\mbfb{y_4} \gets a(\mbfr{b_4} - i \frac{h}{Fr^2}k_x \mbfb{y_3})$
-	\item $\mbfb{y_5} \gets a(\mbfr{b_5} + \frac{h}{Fr^2}k_y \mbfb{y_3})$
-	\item $\mbfb{y_6} \gets a(\mbfr{b_6} -h \left[ik_x \mbfb{y_4} +k_y\mbfb{y_5}\right])$
+	$\mbfb{y_3} \gets \frac{1}{b} \left(\mbfr{b_3} -h a\left[i k_x \mbfr{b_1} + k_y \mbfr{b_2}\right]\right)$ 
+	\item $\mbfb{y_4} \gets \frac{1}{c}(\mbfr{b_4} - i \frac{h(2-H_1)}{Fr^2}k_x \mbfb{y_3})$
+	\item $\mbfb{y_5} \gets \frac{1}{c}(\mbfr{b_5} + \frac{h(2-H_1)}{Fr^2}k_y \mbfb{y_3})$
+	\item $\mbfg{x_6} \gets \mbfr{b_6} -h \left[ik_x \mbfb{y_4} +k_y\mbfb{y_5}\right]$
 	\item $\mbfg{x_6} \gets \frac{1}{d}\mbfb{y_6}$
-	\item $\mbfg{x_5} \gets \mbfb{y_5} +\frac{h}{Fr^2}k_yf\mbfg{x_6}$
-	\item $\mbfg{x_4} \gets \mbfb{y_4} - i \frac{h}{Fr^2}k_xf\mbfg{x_6}$
+	\item $\mbfg{x_5} \gets \mbfb{y_5} +\frac{h(2-H_1)}{Fr^2}k_yf\mbfg{x_6}$
+	\item $\mbfg{x_4} \gets \mbfb{y_4} - i \frac{h(2-H_1)}{Fr^2}k_xf\mbfg{x_6}$
 	\item $\mbfg{x_3} \gets \mbfb{y_3} - g\mbfg{x_6}$
-	\item $\mbfg{x_2}\gets \mbfb{y_2} + \frac{h}{Fr^2}k_y(\mbfg{x_3}+\mbfg{x_6})$
-	\item $\mbfg{x_1} \gets \mbfb{y_1} - i \frac{h}{Fr^2}k_x(\mbfg{x_3}+\mbfg{x_6})$
+	\item $\mbfg{x_2}\gets \mbfb{y_2} + a\frac{h H_1}{Fr^2}k_y (\mbfg{x_3}+\mbfg{x_6})$
+	\item $\mbfg{x_1} \gets \mbfb{y_1} - ia \frac{h H_1}{Fr^2}k_x(\mbfg{x_3}+\mbfg{x_6})$
 \end{enumerate}
 
 Simplified:
 
 \begin{enumerate}
-	\item $\mbfb{y_3} \gets \mbfb{y_3} \gets \frac{a}{b} \left(\mbfr{b_3} -h \left[i k_x \mbfr{b_1} + k_y \mbfr{b_2}\right]\right)$ 
-	\item $\mbfb{y_4} \gets a(\mbfr{b_4} - i \frac{h}{Fr^2}k_x \mbfb{y_3})$
-	\item $\mbfb{y_5} \gets a(\mbfr{b_5} + \frac{h}{Fr^2}k_y \mbfb{y_3})$
-	\item $\mbfg{x_6} \gets \frac{a}{d}(\mbfr{b_6} -h \left[ik_x \mbfb{y_4} +k_y\mbfb{y_5}\right])$
-	\item $\mbfg{x_5} \gets \mbfb{y_5} +\frac{h}{Fr^2}k_yf\mbfg{x_6}$
-	\item $\mbfg{x_4} \gets \mbfb{y_4} - i \frac{h}{Fr^2}k_xf\mbfg{x_6}$
+	\item $\mbfb{y_3} \gets \frac{1}{b} \left(\mbfr{b_3} -h a \left[i k_x \mbfr{b_1} + k_y \mbfr{b_2}\right]\right)$
+	\item $\mbfb{y_4} \gets \frac{1}{c}(\mbfr{b_4} - i \frac{h(2-H_1)}{Fr^2}k_x \mbfb{y_3})$
+	\item $\mbfb{y_5} \gets \frac{1}{c}(\mbfr{b_5} + \frac{h(2-H_1)}{Fr^2}k_y \mbfb{y_3})$
+	\item $\mbfg{x_6} \gets \frac{1}{d}\left(\mbfr{b_6} -h \left[ik_x \mbfb{y_4} +k_y\mbfb{y_5}\right]\right)$
+	\item $\mbfg{x_5} \gets \mbfb{y_5} +\frac{h(2-H_1)}{Fr^2}k_yf\mbfg{x_6}$
+	\item $\mbfg{x_4} \gets \mbfb{y_4} - i \frac{h(2-H_1)}{Fr^2}k_xf\mbfg{x_6}$
 	\item $\mbfg{x_3} \gets \mbfb{y_3} - g\mbfg{x_6}$
-	\item $\mbfg{x_2}\gets \mbfb{y_2} + \frac{h}{Fr^2}k_y(\mbfg{x_3}+\mbfg{x_6})$
-	\item $\mbfg{x_1} \gets \mbfb{y_1} - i \frac{h}{Fr^2}k_x(\mbfg{x_3}+\mbfg{x_6})$
+	\item $\mbfg{x_2}\gets a\left(\mbfr{b_2} + \frac{h H_1}{Fr^2}k_y (\mbfg{x_3}+\mbfg{x_6})\right)$
+	\item $\mbfg{x_1} \gets a\left(\mbfr{b_1} - i \frac{h H_1}{Fr^2}k_x(\mbfg{x_3}+\mbfg{x_6})\right)$
 \end{enumerate}
-Some other speed-ups include storing $(i \frac{h}{Fr^2} k_x$ and $ \frac{h}{Fr^2}k_y)$ instead of $k_x$ and $k_y$, and storing $b$ and $d$ as their reciprocals to have more multiplications instead of divisions. 
-Note that you only need the following matrices: $i \frac{h}{Fr^2} k_x, \frac{h}{Fr^2}k_y, a, b^{-1}, d^{-1}, f, g$.
+Some other speed-ups include storing $(i \frac{h}{Fr^2} k_x$ and $ \frac{h}{Fr^2}k_y)$ instead of $k_x$ and $k_y$, and storing $b$, $c$, and $d$ as their reciprocals to have more multiplications instead of divisions. 
+Note that you only need the following matrices: $i \frac{h}{Fr^2} k_x, \frac{h}{Fr^2}k_y, a, b^{-1},c^{-1}, d^{-1}, f, g$.
 
 \end{document}
