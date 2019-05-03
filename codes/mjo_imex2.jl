@@ -287,16 +287,16 @@ end
     grid_x2 = Int(params.grid_x/2+1);
     kx = ((params.LL/params.RE )* 
     repeat(range(0, stop=grid_x2-1)', params.grid_y-1,1));
-    ky = ((9/2 * params.LL/params.RE)*
+    ky = ((180/(params.lat_range[2]-params.lat_range[1]) * params.LL/params.RE)*
     repeat(range(0, stop=params.grid_y-2), 1,grid_x2));
 
     aa = (h_time^2 * params.Fr)*(kx.^2 + ky.^2);
     c = 1 .+ bb * (kx.^2 + ky.^2)
     ak = 1 ./ (c .+ (h_time * fr));
-    b = 1 ./  (ak .*aa .+ c); # actually 1/b
-    g = aa .*ak .* b;
+    b = 1 ./  (H1 * ak .*aa .+ c); # actually 1/b
+    g = H1 * aa .*ak .* b;
     f = (params.AA .- g) ./ c;
-    d = c .+ (2-H1)*aa .* f; d = 1 ./ d #acdtually 1/d
+    d = c .+ (2-H1) * aa .* f; d = 1 ./ d #acdtually 1/d
     c = 1 ./c #actually 1/c
 
     kx = (im*h_time*params.Fr) * kx;
