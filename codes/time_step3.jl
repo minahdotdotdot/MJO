@@ -161,7 +161,7 @@ end
     outhat.m1[:,:] = a .*(RHShat.m1 - H1*kx .* (outhat.h1 + outhat.h2));
 
     # Into Physical Space
-    idcsft(exstate, outhat, params.grid_x)
+    idcsft(exstate, outhat, params.grid_x, params.grid_y)
     return exstate
 end
 #########################
@@ -265,20 +265,10 @@ end
 
 function imex_print(N::Int, every::Int, h_time::Float64, name::String; 
     bb::Float64=0.005, multistep::Bool=true, step::Int=3, exscheme::Function=ab1_step,
-    X=:g, x=9.80665,
     loc::String="../movies/",
     msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step],
-    H1::Float64=1.0, NA::Float64=1.5, fr::Float64=0.5,
+    params::MJO_params=gen_params(), NA::Float64=1.5, fr::Float64=0.5,
     hov::Bool=false, everyH::Int)
-    #=if hov==true
-        hovmoller(N, every, h_time, name, 
-    bb=bb, multistep=multistep, step=step, exscheme=exscheme,
-    X=X, x=x, loc=loc, msfunc=msfunc, H1=H1, NA=NA)
-        return "hovmoller printed!"
-    end=#
-    params = gen_params(h_time);
-    ch_params!(params, X, x); #Change params field X into value x. 
-    ch_params!(params, :AA, AAval(H1=H1)) #Change alpha param to match H1.
     IC     = genInitSr(params, scheme="imex");
     IChat  = genInitSr(params, scheme="im");
     state  = deepcopy(IC);     exstate = deepcopy(IC);
@@ -370,72 +360,6 @@ function hovmollertxt(txtname::String, imagename::String; loc::String="../movies
     savefig(
             loc*imagename*".png",
             pad_inches=.10,
-            bbox_inches="tight"
-        );
-    close(fig)
-    end
-end
-
-function hovmoller(N::Int, every::Int, h_time::Float64, name::String; 
-    bb::Float64=0.005, multistep::Bool=true, step::Int=3, exscheme::Function=ab1_step,
-    X=:g, x=9.80665,
-    loc::String="../movies/",
-    msfunc::Array{Function,1}=[ab1_step, ab2_step, ab3_step, ab4_step],
-    H1::Float64=1.0, NA::Float64=1.5)
-    params = gen_params(h_time);
-    ch_params!(params, X, x); #Change params field X into value x. 
-    ch_params!(params, :AA, AAval(H1=H1)) #Change alpha param to match H1.
-    IC     = genInitSr(params, scheme="imex");
-    IChat  = genInitSr(params, scheme="im");
-    state  = deepcopy(IC);     exstate = deepcopy(IC);
-    RHShat = deepcopy(IChat);  outhat  = deepcopy(IChat);
-    bb     = bb*h_time; #input bb should be the actual diffusion constant: K = bb/h_time.
-    kx, ky, a, b, d, f, g = imex_init(params, h_time, bb, H1=H1);
-    tendlist = Array{MJO_State,1}(undef, 1); start = 2;
-    tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time, H1=H1);
-    newtxt!(state; name=name, loc=loc)
-    #saveimshow(state, name*string(1, pad=pad),loc=loc, params=params)
-    if multistep==true
-        tendlist = Array{MJO_State,1}(undef, step);
-        tendlist[1] = EXNL(params, state, exstate, bb=bb, h_time=h_time, H1=H1);
-        for i = 2 : step
-            exstate, tendlist = msfunc[i-1](state, exstate, tendlist, i, params, bb=bb, h_time=h_time, init=true, H1=H1);
-            #@printf("step %3d: maximum %4.2e \n",i, maximum(abs.(exstate.m1)))
-            exstate.q[:,:] = exstate.q + sqrt(h_time)*NA*tanh.(3.0*exstate.q).*genRandfield(grid_y=params.grid_y, grid_x=params.grid_x) #7.45
-            state = imsolve(exstate, RHShat, outhat, params, h_time, kx, ky, a, b, d, f, g, H1=H1)
-            state.q[state.q .< 0.] .= 0.
-        end
-        start = step+1
-    end
-    for i = start : N+1
-        exstate, tendlist = exscheme(state, exstate, tendlist, i, params, bb=bb, h_time=h_time, H1=H1)
-        exstate.q[:,:] = exstate.q + sqrt(h_time)*NA*tanh.(3.0*exstate.q).*genRandfield(grid_y=params.grid_y, grid_x=params.grid_x) 
-        state = imsolve(exstate, RHShat, outhat, params, h_time,kx, ky, a, b, d, f, g, H1=H1)
-        state.q[state.q .< 0.] .= 0.
-        if rem(i, every) ==1
-            if istherenan(state)==true || isthereinf(state)==true
-                @printf("Nan alert!")
-                return 0
-            elseif minimum(state.h1) <= -1*H1
-                @printf("H1 is too small.")
-                return 0
-            end
-            addtxt!(state;name=name, loc=loc)
-        end
-    end
-    for f in fieldnames(MJO_State)
-        cm = "PuOr";
-        if f == :q
-            cm = "BuGn";
-        end
-        fig, ax=subplots();
-        getproperty(ax, :set_aspect)("equal");
-        fig.colorbar(
-            ax.imshow(readdlm(loc*string(f)*"/"*name*".txt"), cmap=cm), 
-            orientation="horizontal");
-    savefig(
-            loc*string(f)*"/"*name*".png",
-            pad_inches=.10, 
             bbox_inches="tight"
         );
     close(fig)

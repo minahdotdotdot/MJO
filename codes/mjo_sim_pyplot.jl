@@ -123,28 +123,3 @@ end
         close(fig)
     end
 end
-
-
-
-
-
-# Should have net north momentum = 0 (integral/sum) 
-# & zero at boundaries
-# check periodic boundary and make sure initial conditions are periodic in x
-# zero momenta and constant heightfields
-# random moisture field (random, or random then smooth it. )
-# show velocity instead of momenta DONE
-# see how long it takes for interesting moisture dynamics
-    # interesting == breaking code
-    # or dynamics 
-    # 20 days ish
-# github
-# future: RK4 (implicit maybe)
-
-# thoughts: make P be a function of concentration (instead of total water)
-# i.e. Q <- Q/h1, Qs a different appropriate parameter 
-# try getting rid of div terms system of 3 equations
-
-
-
-

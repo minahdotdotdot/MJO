@@ -3,9 +3,6 @@
 # Copyright 2018. Not for public distribution.
 
 include("mjo_a.jl")
-global h_time = 0.0009 # = 3min
-params=gen_params(h_time);
-global grid_y = params.grid_y
 ###############################################################################
 # DCT/DST & FFT and their inverses
 using FFTW
@@ -34,7 +31,7 @@ function dcsft(state::MJO_State, statehat::MJO_State_im, grid_x::Int16,
     return statehat
 end
 
-function idcsft(state::MJO_State, statehat::MJO_State_im, grid_x::Int16,
+function idcsft(state::MJO_State, statehat::MJO_State_im, grid_x::Int16, grid_y::Int16,
     fields=fieldnames(MJO_State)[1:6])
     for qq in fields
         if qq in fields[[1,3,5,6]]   # m1, m2, h1, h2 
@@ -318,12 +315,3 @@ end
     He = HH*H1*(1-.5*H1)
     return g*He/(g*He-22^2)
 end
-
-#=
-IC = MJO_State(
-rand(162,1440), rand(162,1440), 
-rand(162,1440), rand(162,1440), 
-rand(162,1440), rand(162,1440), 
-rand(162,1440));
-IChat = genInitSr(scheme="im")
-=#

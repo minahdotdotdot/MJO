@@ -264,27 +264,23 @@ function evolfindNaN(evol::Array{MJO_State,1})
        print(whereNaN(evol, f), "\t")
     end
 end 
+@inline function AAval(;H1::Float64=1.0, g::Float64=9.80665, HH::Float64=5000.0)
+    He = HH*H1*(2.0 -H1)/(2.0)
+    return g*He/(g*He-22^2)
+end
 
-function gen_params(h_time::Float64)
-    return MJO_params(10.0^6, # LL
-                    5000.0,            # HH
-                    5.0,               # UU
-                    0.05,              # QQ
-                    1382400.0,         # T_RC
-                    345600,            # T_Q
-                    9.80665,           #  g
-                    6371000.0,         # RE
-                    1.0184,            # AA
-                    750.0,             # BB
-                    1.1,               # DD
-                    .058,              # Qs
-                    11.4,              # B
-                    0.25,              # degree
-                    [-30.0, 30.0],     #[-20.0, 20.0],     # lat_range
-                    [0.0, 90.0],      #[0.0, 360.0] lon_range
-                    17500.0,           # PP
-                    h_time             # time-step length
-                    )
+function gen_params(;LL::T=10.0^6, HH::T=5000.0, UU::T=5.0, QQ::T=0.05, 
+    T_RC::T=1382400.0, T_Q::T=345600.0,
+    H1::T=1.0, BB::T=750.0, DD::T=1.1, Qs::T=0.058, B::T=11.4, 
+    degree::T=0.25,lat_range=[-30.0, 30.0], lon_range=[0.0, 90.0], 
+    PP::T=17500.0, h_time::T=0.009) where T<:Float64
+    return MJO_params(LL, HH, UU, QQ,
+                    T_RC, T_Q,
+                    9.80665, 6371000.0,         # g, RE
+                    AAval(H1=H1, HH=HH), # AA
+                    BB, DD, Qs, B,
+                    degree, lat_range,lon_range,
+                    PP, h_time)
 end
 
 function ch_params!(params:: MJO_params, X::Symbol, x::Float64)
