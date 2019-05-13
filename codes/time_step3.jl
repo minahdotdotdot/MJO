@@ -315,14 +315,18 @@ function imex_print(N::Int, every::Int, h_time::Float64, name::String;
             saveimshow(state, name*string(1+div(i,every), pad=pad), loc=loc, params=params, H1=H1)
         end
     end
+    newtxt!(state; name=name*"end", loc=loc, hov=false);#save last state.
 end
 
 using DelimitedFiles
 
-@inline function newtxt!(state::MJO_State; name::String, loc::String="../movies/")
+@inline function newtxt!(state::MJO_State; name::String, loc::String="../movies/", hov::Bool=true)
     m =Int(size(state.q)[1]/2);
     for f in fieldnames(MJO_State)
         writedlm(loc*string(f)*"/"*name*".txt", getproperty(state,f)[m,:]')
+        if hov==false
+            writedlm(loc*string(f)*"/"*name*".txt", getproperty(state,f))
+        end
         #(.5*(state[:f][m,:]+state[:f][m+1,:]))'
     end
 end
@@ -339,7 +343,7 @@ end
 function hovmollertxt(txtname::String, imagename::String; loc::String="../movies/", T=240)
     loc0 = deepcopy(loc)
     for f in fieldnames(MJO_State)
-        cm = "PuOr";
+        cm = "bwr"; #"PuOr"
         if f == :q
             cm = "gist_ncar"#"BuGn";
         end

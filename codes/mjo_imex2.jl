@@ -196,6 +196,8 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
         KK = bb/h_time
     end
 
+    sigma = 23.43677/params.lat_range[2]*size(state.q)[1]/3; sigma = sigma^2; # variance for msource
+
     # Ghost cells
     grid_y = params.grid_y
     grid_x = params.grid_x
@@ -266,6 +268,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
 
             ### MOISTURE
             out.q[jj,ii] = (
+            	0.64*exp(-(jj-(params.grid_y/2+0.5))^2 / sigma) 
                 - div_flux(state.m1, state.n1, state.h1, state.q, ii, iii, iiii, jj, delt_x, delt_y, H=H1)
                 +(-1.0+Qs./(DD*state.q[jj,ii]))*P(LL,UU,QQ,B,Qs,state.q[jj,ii], T_Q,PP) #=\hat{P}(Q)=#
                 + KK*diffusion(state.q, ii, iii, iiii, jj, delt_x, delt_y)

@@ -272,14 +272,14 @@ end
 function gen_params(;LL::T=10.0^6, HH::T=5000.0, UU::T=5.0, QQ::T=0.05, 
     T_RC::T=1382400.0, T_Q::T=345600.0,
     H1::T=1.0, BB::T=750.0, DD::T=1.1, Qs::T=0.058, B::T=11.4, 
-    degree::T=0.25,lat_range=[-30.0, 30.0], lon_range=[0.0, 90.0], 
+    deg::T=0.25,lat_range=[-30.0, 30.0], lon_range=[0.0, 90.0], 
     PP::T=17500.0, h_time::T=0.009) where T<:Float64
     return MJO_params(LL, HH, UU, QQ,
                     T_RC, T_Q,
                     9.80665, 6371000.0,         # g, RE
                     AAval(H1=H1, HH=HH), # AA
                     BB, DD, Qs, B,
-                    degree, lat_range,lon_range,
+                    deg, lat_range,lon_range,
                     PP, h_time)
 end
 
