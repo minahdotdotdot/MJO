@@ -80,8 +80,8 @@ end
         PP::T) where T<:Real
     value = BQH*P(LL, UU, QQ, B, Qs, q, T_Q,PP)
     #H2 = 2 - H1 
-    if (hh2 - hh1) > T(0)
-        value = value - Tratio * (hh2-hh1)
+    if hh1 < T(0)
+        value = value + Tratio * hh1
     end
     return value
 end
