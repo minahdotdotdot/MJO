@@ -340,10 +340,22 @@ end
     end
 end
 
+function genInitSr(;name::String, loc::String="../movies/")
+    return MJO_State(
+        readdlm(loc*"m1/"*name*".txt"), #m1
+        readdlm(loc*"n1/"*name*".txt"), #n1
+        readdlm(loc*"m2/"*name*".txt"), #m2
+        readdlm(loc*"n2/"*name*".txt"), #n2
+        readdlm(loc*"h1/"*name*".txt"), #h1
+        readdlm(loc*"h2/"*name*".txt"), #h2
+        readdlm(loc*"q/"*name*".txt"),  #q
+        )
+end
+
 function hovmollertxt(txtname::String, imagename::String; loc::String="../movies/", T=240)
     loc0 = deepcopy(loc)
     for f in fieldnames(MJO_State)
-        cm = "bwr"; #"PuOr"
+        cm = "bwr"; #"PuOr";
         if f == :q
             cm = "gist_ncar"#"BuGn";
         end

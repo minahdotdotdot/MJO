@@ -55,23 +55,6 @@ function idcsft(state::MJO_State, statehat::MJO_State_im, grid_x::Int16, grid_y:
 end
 
 using LinearAlgebra
-#=
-xx = pi/180*repeat(range(0,stop=5,length=grid_y),1,grid_x).*repeat(params.lon', grid_y,);
-yy = pi/180*repeat(range(0,stop=5,length=grid_x)',grid_y).*repeat(params.lat, 1,grid_x);
-OO = (sin.(144000*xx)+cos.(2000*xx)).*cos.(160*yy)
-EE = (sin.(144000*xx)+cos.(2000*xx)).*sin.(160*yy)
-IC = MJO_State(OO,EE,OO,OO,EE,OO,rand(grid_y,grid_x));
-IChat = genInitSr(scheme="im");
-origIC = deepcopy(IC);
-dcsft(IC, IChat); 
-idcsft(IC, IChat); 
-diffIC = origIC-IC;
-for qq in fieldnames(MJO_State)
-    print(qq, ": ", maximum(abs.(getproperty(diffIC, qq)[2:end-1,:])), "\n")
-end
-=#
-
-
 ###############################################################################
 # EXPLICIT, NONLINEAR TERMS
 # Params:
@@ -246,7 +229,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
                 + params.Ro*params.y[jj]*state.n2[jj,ii]                             #=+1/Ro*n2=#
                 - params.Fr*(
                     state.h2[jj,ii] * .5*delt_x*(h_sum_a(state.h1,state.h2,AA,jj,iiii+1) - h_sum_a(state.h1,state.h2,AA,jj,iii-1))
-                    )                                                               #=h_1∂x(h_1+\alpha* h_2)=#
+                    )                                                               #=h_2∂x(h_1+\alpha* h_2)=#
                 + state.m1[jj,ii]/(H1+state.h1[jj,ii])*value_P_RC
                 )
 
