@@ -178,8 +178,8 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
     else
         KK = bb/h_time
     end
-
-    sigma = 23.43677/params.lat_range[2]*size(state.q)[1]/3; sigma = sigma^2; # variance for msource
+    stdev = 2; sigma = 23.43677/params.lat_range[2]*size(state.q)[1]/(stdev*2); 
+    sigma = sigma^2; # variance for msource with stdev standard deviations at 23.4 lat deg. 
 
     # Ghost cells
     grid_y = params.grid_y
