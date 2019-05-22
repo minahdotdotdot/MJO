@@ -155,7 +155,8 @@ end
     return h1[jj,ii] + a*h2[jj,ii]
 end
 
-function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=0, h_time::Float64=0, H1::Float64=1.0)
+function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; 
+    bb::Float64=0, h_time::Float64=0, H1::Float64=1.0, msource::Array{Float64,1}=[0.21, 3.0])
     delt_x = params.delt_x        :: Float64
     delt_y = params.delt_y        :: Float64
     LL     = params.LL            :: Float64
@@ -169,16 +170,12 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
     DD     = params.DD            :: Float64
     T_Q    = params.T_Q           :: Float64
     PP     = params.PP            :: Float64
+    KK     = params.KK            :: Float64
 
     H2 = 2.0 - H1
     #Set diffusion constant for q equations. 
-    KK = 0; 
-    if bb==0 
-        KK = params.KK            :: Float64
-    else
-        KK = bb/h_time
-    end
-    stdev = 2; sigma = 23.43677/params.lat_range[2]*size(state.q)[1]/(stdev*2); 
+
+    sigma = 23.43677/params.lat_range[2]*size(state.q)[1]/(msource[2]*2); 
     sigma = sigma^2; # variance for msource with stdev standard deviations at 23.4 lat deg. 
 
     # Ghost cells
@@ -251,7 +248,7 @@ function EXNL(params::MJO_params, state::MJO_State, out::MJO_State; bb::Float64=
 
             ### MOISTURE
             out.q[jj,ii] = (
-            	0.64*exp(-(jj-(params.grid_y/2+0.5))^2 / sigma) 
+            	msource[1]*exp(-(jj-(params.grid_y/2+0.5))^2 / sigma) 
                 - div_flux(state.m1, state.n1, state.h1, state.q, ii, iii, iiii, jj, delt_x, delt_y, H=H1)
                 +(-1.0+Qs./(DD*state.q[jj,ii]))*P(LL,UU,QQ,B,Qs,state.q[jj,ii], T_Q,PP) #=\hat{P}(Q)=#
                 + KK*diffusion(state.q, ii, iii, iiii, jj, delt_x, delt_y)

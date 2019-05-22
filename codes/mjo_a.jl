@@ -46,7 +46,7 @@ mutable struct MJO_params
         g, RE, 
         AA, BB, DD, Qs, B, 
         deg, lat_range, lon_range, 
-        PP, h_time
+        PP, bb, h_time
         ) =
     new(copy(LL), copy(HH), copy(UU), copy(QQ), copy(T_RC), copy(T_Q),
         copy(g), copy(RE),
@@ -57,7 +57,7 @@ mutable struct MJO_params
         180.0*copy(LL)/(copy(deg)*pi*copy(RE)), 180.0*copy(LL)/(copy(deg)*pi*copy(RE)),
         Int((lon_range[2]-lon_range[1])/deg), Int((lat_range[2]-lat_range[1])/deg + 2),
         4.0*pi*LL^2/(3600.0*24.0*UU*RE), g*HH/UU^2, BB*QQ/HH, LL/(UU*T_RC), 
-        copy(PP), 0.042 
+        copy(PP), bb/h_time
         )
 end
 
@@ -273,14 +273,14 @@ function gen_params(;LL::T=10.0^6, HH::T=5000.0, UU::T=5.0, QQ::T=0.05,
     T_RC::T=1382400.0, T_Q::T=345600.0,
     H1::T=1.0, BB::T=750.0, DD::T=1.1, Qs::T=0.058, B::T=11.4, 
     deg::T=0.25,lat_range=[-30.0, 30.0], lon_range=[0.0, 90.0], 
-    PP::T=17500.0, h_time::T=0.009) where T<:Float64
+    PP::T=17500.0, bb::T=.005, h_time::T=0.009) where T<:Float64
     return MJO_params(LL, HH, UU, QQ,
                     T_RC, T_Q,
                     9.80665, 6371000.0,         # g, RE
                     AAval(H1=H1, HH=HH), # AA
                     BB, DD, Qs, B,
                     deg, lat_range,lon_range,
-                    PP, h_time)
+                    PP, bb, h_time)
 end
 
 function ch_params!(params:: MJO_params, X::Symbol, x::Float64)
